@@ -1,11 +1,15 @@
 "use client";
 
-import { DragEvent, useRef, useState } from "react";
+import { DragEvent, useMemo, useRef, useState } from "react";
+import STLViewer from "./STLViewer";
+import { ModelDimensions } from "@/lib/types";
 
 interface ModelViewerProps {
-  fileName: string | null;
+  file: File | null;
   onFileSelected: (file: File) => void;
   onRemove: () => void;
+  onDimensions: (dimensions: ModelDimensions) => void;
+  onPreviewError: () => void;
 }
 
 const FLOATING_ICONS: { style: React.CSSProperties; d?: string; extra?: JSX.Element }[] = [
@@ -54,10 +58,17 @@ const FLOATING_ICONS: { style: React.CSSProperties; d?: string; extra?: JSX.Elem
   { style: { right: "44%", top: "8%", width: 30, height: 30 }, d: "M12 32l20-20 20 20-20 20-20-20Z" },
 ];
 
-export default function ModelViewer({ fileName, onFileSelected, onRemove }: ModelViewerProps) {
+export default function ModelViewer({
+  file,
+  onFileSelected,
+  onRemove,
+  onDimensions,
+  onPreviewError,
+}: ModelViewerProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
-  const loaded = Boolean(fileName);
+  const loaded = Boolean(file);
+  const isStl = useMemo(() => file?.name.toLowerCase().endsWith(".stl") ?? false, [file]);
 
   function handleDrag(e: DragEvent<HTMLDivElement>, active: boolean) {
     e.preventDefault();
@@ -151,74 +162,66 @@ export default function ModelViewer({ fileName, onFileSelected, onRemove }: Mode
           </div>
         )}
 
-        {loaded && (
+        {loaded && file && (
           <div className="animate-fade-in absolute inset-0 flex items-center justify-center">
-            <div className="relative" style={{ perspective: 900 }}>
-              <div
-                className="animate-spin-3d relative h-36 w-36 sm:h-48 sm:w-48"
-                style={{ transformStyle: "preserve-3d" }}
-              >
+            {isStl ? (
+              <STLViewer file={file} onDimensions={onDimensions} onError={onPreviewError} />
+            ) : (
+              <div className="relative flex flex-col items-center gap-3 px-6 text-center" style={{ perspective: 900 }}>
                 <div
-                  className="absolute inset-0"
-                  style={{
-                    transform: "translateZ(76px)",
-                    border: "1px solid rgba(56,189,248,0.9)",
-                    background: "linear-gradient(135deg, rgba(56,189,248,0.22), rgba(37,99,235,0.08))",
-                  }}
-                />
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    transform: "translateZ(-76px)",
-                    border: "1px solid rgba(56,189,248,0.35)",
-                    background: "rgba(56,189,248,0.05)",
-                  }}
-                />
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    transform: "rotateY(90deg) translateZ(76px)",
-                    border: "1px solid rgba(37,99,235,0.75)",
-                    background: "linear-gradient(135deg, rgba(37,99,235,0.18), transparent)",
-                  }}
-                />
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    transform: "rotateY(90deg) translateZ(-76px)",
-                    border: "1px solid rgba(37,99,235,0.3)",
-                    background: "rgba(37,99,235,0.05)",
-                  }}
-                />
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    transform: "rotateX(90deg) translateZ(76px)",
-                    border: "1px solid rgba(125,211,252,0.7)",
-                    background: "linear-gradient(135deg, rgba(125,211,252,0.16), transparent)",
-                  }}
-                />
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    transform: "rotateX(90deg) translateZ(-76px)",
-                    border: "1px solid rgba(125,211,252,0.3)",
-                    background: "rgba(125,211,252,0.05)",
-                  }}
-                />
+                  className="animate-spin-3d relative h-32 w-32 sm:h-40 sm:w-40"
+                  style={{ transformStyle: "preserve-3d" }}
+                >
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      transform: "translateZ(64px)",
+                      border: "1px solid rgba(56,189,248,0.9)",
+                      background: "linear-gradient(135deg, rgba(56,189,248,0.22), rgba(37,99,235,0.08))",
+                    }}
+                  />
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      transform: "translateZ(-64px)",
+                      border: "1px solid rgba(56,189,248,0.35)",
+                      background: "rgba(56,189,248,0.05)",
+                    }}
+                  />
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      transform: "rotateY(90deg) translateZ(64px)",
+                      border: "1px solid rgba(37,99,235,0.75)",
+                      background: "linear-gradient(135deg, rgba(37,99,235,0.18), transparent)",
+                    }}
+                  />
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      transform: "rotateY(90deg) translateZ(-64px)",
+                      border: "1px solid rgba(37,99,235,0.3)",
+                      background: "rgba(37,99,235,0.05)",
+                    }}
+                  />
+                </div>
+                <p className="mono max-w-[220px] text-[11px] text-slate-400">
+                  Živý 3D náhľad je dostupný len pre .stl súbory
+                </p>
               </div>
-            </div>
+            )}
+
             <button
               onClick={onRemove}
               title="Odstrániť model"
-              className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/10 backdrop-blur transition-colors hover:bg-white/20"
+              className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/10 backdrop-blur transition-colors hover:bg-white/20"
             >
               <svg width={14} height={14} viewBox="0 0 24 24" fill="none">
                 <path d="M18 6L6 18M6 6l12 12" stroke="white" strokeWidth={1.8} strokeLinecap="round" />
               </svg>
             </button>
-            <div className="mono absolute bottom-3 left-3 rounded-lg border border-white/10 bg-white/10 px-2.5 py-1 text-[11px] text-slate-200 backdrop-blur">
-              {fileName}
+            <div className="mono absolute bottom-3 left-3 z-10 rounded-lg border border-white/10 bg-white/10 px-2.5 py-1 text-[11px] text-slate-200 backdrop-blur">
+              {file.name}
             </div>
           </div>
         )}

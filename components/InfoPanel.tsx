@@ -2,10 +2,12 @@ import { ModelDimensions } from "@/lib/types";
 
 interface InfoPanelProps {
   dimensions: ModelDimensions | null;
+  fileName?: string | null;
 }
 
-export default function InfoPanel({ dimensions }: InfoPanelProps) {
+export default function InfoPanel({ dimensions, fileName }: InfoPanelProps) {
   const loaded = Boolean(dimensions);
+  const processing = Boolean(fileName) && !dimensions;
 
   return (
     <div className="card relative rounded-2xl p-4 sm:p-5">
@@ -61,7 +63,11 @@ export default function InfoPanel({ dimensions }: InfoPanelProps) {
           style={{ background: loaded ? "var(--emerald)" : "var(--border)" }}
         />
         <span className={`text-sm ${loaded ? "font-medium text-[var(--text-1)]" : "text-[var(--text-3)]"}`}>
-          {loaded ? "Model je v poriadku a pripravený na tlač" : "Model ešte nebol nahraný"}
+          {loaded
+            ? "Model je v poriadku a pripravený na tlač"
+            : processing
+              ? "Analyzujem rozmery modelu…"
+              : "Model ešte nebol nahraný"}
         </span>
       </div>
     </div>

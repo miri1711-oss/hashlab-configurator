@@ -192,3 +192,42 @@ body {
 input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
 }
+
+.field-input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.875rem;
+  color: var(--text-1);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  width: 100%;
+}
+.field-input::placeholder {
+  color: var(--text-3);
+}
+.field-input:focus {
+  outline: none;
+  border-color: var(--blue-2);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+.field-input.field-error {
+  border-color: #ef4444;
+}
+
+.option-card {
+  border: 1px solid var(--border);
+  border-radius: 0.85rem;
+  padding: 0.85rem 1rem;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+.option-card:hover {
+  border-color: #c9dcf2;
+  background: var(--surface-2);
+}
+.option-card.selected {
+  border-color: var(--blue-2);
+  background: #eef6fe;
+  box-shadow: 0 0 0 1px var(--blue-2) inset;
+}
