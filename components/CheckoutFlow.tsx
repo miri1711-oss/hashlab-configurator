@@ -1,0 +1,293 @@
+"use client";
+
+import { FormEvent, useState } from "react";
+import {
+  CustomerDetails,
+  PAYMENT_OPTIONS,
+  PaymentMethod,
+  SHIPPING_OPTIONS,
+  ShippingMethod,
+  generateOrderNumber,
+} from "@/lib/order";
+import { formatEuro } from "@/lib/pricing";
+
+export interface OrderSummaryData {
+  fileName: string;
+  materialName: string;
+  colorLabel: string;
+  infillLabel: string;
+  quantity: number;
+  itemsPrice: number;
+  deliveryLabel: string;
+}
+
+interface CheckoutFlowProps {
+  summary: OrderSummaryData;
+  onBack: () => void;
+  onStartOver: () => void;
+}
+
+const EMPTY_DETAILS: CustomerDetails = {
+  fullName: "",
+  email: "",
+  phone: "",
+  street: "",
+  city: "",
+  zip: "",
+};
+
+export default function CheckoutFlow({ summary, onBack, onStartOver }: CheckoutFlowProps) {
+  const [details, setDetails] = useState<CustomerDetails>(EMPTY_DETAILS);
+  const [shipping, setShipping] = useState<ShippingMethod>("courier");
+  const [payment, setPayment] = useState<PaymentMethod>("card");
+  const [errors, setErrors] = useState<Partial<Record<keyof CustomerDetails, boolean>>>({});
+  const [orderNumber, setOrderNumber] = useState<string | null>(null);
+
+  const shippingOption = SHIPPING_OPTIONS.find((o) => o.id === shipping)!;
+  const totalWithShipping = summary.itemsPrice + shippingOption.price;
+
+  function updateField<K extends keyof CustomerDetails>(field: K, value: string) {
+    setDetails((prev) => ({ ...prev, [field]: value }));
+  }
+
+  function validate(): boolean {
+    const requiredFields: (keyof CustomerDetails)[] = ["fullName", "email", "phone", "street", "city", "zip"];
+    const nextErrors: Partial<Record<keyof CustomerDetails, boolean>> = {};
+    let valid = true;
+
+    for (const field of requiredFields) {
+      if (!details[field].trim()) {
+        nextErrors[field] = true;
+        valid = false;
+      }
+    }
+    if (details.email && !/^\S+@\S+\.\S+$/.test(details.email)) {
+      nextErrors.email = true;
+      valid = false;
+    }
+
+    setErrors(nextErrors);
+    return valid;
+  }
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!validate()) return;
+    setOrderNumber(generateOrderNumber());
+  }
+
+  if (orderNumber) {
+    return (
+      <div className="card mx-auto flex max-w-lg flex-col items-center gap-4 rounded-2xl p-8 text-center">
+        <div
+          className="flex h-14 w-14 items-center justify-center rounded-2xl"
+          style={{ background: "linear-gradient(135deg, rgba(16,185,129,0.18), rgba(16,185,129,0.08))" }}
+        >
+          <svg width={26} height={26} viewBox="0 0 24 24" fill="none">
+            <path
+              d="M20 6L9 17l-5-5"
+              stroke="var(--emerald)"
+              strokeWidth={2.4}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </div>
+        <h2 className="display text-xl font-bold text-[var(--text-1)]">Objednávka bola prijatá</h2>
+        <p className="mono text-sm text-[var(--text-2)]">Číslo objednávky: {orderNumber}</p>
+        <p className="text-sm text-[var(--text-3)]">
+          Potvrdenie sme poslali na {details.email}. Odhadované doručenie: {summary.deliveryLabel}.
+        </p>
+
+        <div className="mt-2 w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-2)] p-4 text-left text-sm">
+          <div className="flex justify-between py-1">
+            <span className="text-[var(--text-3)]">Súbor</span>
+            <span className="mono text-[var(--text-1)]">{summary.fileName}</span>
+          </div>
+          <div className="flex justify-between py-1">
+            <span className="text-[var(--text-3)]">Materiál</span>
+            <span className="text-[var(--text-1)]">{summary.materialName}</span>
+          </div>
+          <div className="flex justify-between py-1">
+            <span className="text-[var(--text-3)]">Doprava</span>
+            <span className="text-[var(--text-1)]">{shippingOption.label}</span>
+          </div>
+          <div className="mt-1 flex justify-between border-t border-[var(--border-soft)] pt-2 font-bold">
+            <span className="text-[var(--text-1)]">Celkom</span>
+            <span className="grad-text mono">{formatEuro(totalWithShipping)}</span>
+          </div>
+        </div>
+
+        <button
+          onClick={onStartOver}
+          className="btn-gradient mt-2 rounded-xl px-6 py-3 text-sm font-bold text-white"
+        >
+          Vytvoriť novú objednávku
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 py-6 lg:grid-cols-5">
+      <section className="flex flex-col gap-4 lg:col-span-3">
+        <div className="card rounded-2xl p-4 sm:p-5">
+          <p className="display mb-3.5 text-sm font-bold text-[var(--text-1)]">Kontaktné a doručovacie údaje</p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Field
+              label="Meno a priezvisko"
+              value={details.fullName}
+              error={errors.fullName}
+              onChange={(v) => updateField("fullName", v)}
+              placeholder="Ján Novák"
+              full
+            />
+            <Field
+              label="Email"
+              type="email"
+              value={details.email}
+              error={errors.email}
+              onChange={(v) => updateField("email", v)}
+              placeholder="jan@priklad.sk"
+            />
+            <Field
+              label="Telefón"
+              type="tel"
+              value={details.phone}
+              error={errors.phone}
+              onChange={(v) => updateField("phone", v)}
+              placeholder="+421 900 123 456"
+            />
+            <Field
+              label="Ulica a číslo"
+              value={details.street}
+              error={errors.street}
+              onChange={(v) => updateField("street", v)}
+              placeholder="Hlavná 12"
+              full
+            />
+            <Field
+              label="Mesto"
+              value={details.city}
+              error={errors.city}
+              onChange={(v) => updateField("city", v)}
+              placeholder="Bratislava"
+            />
+            <Field
+              label="PSČ"
+              value={details.zip}
+              error={errors.zip}
+              onChange={(v) => updateField("zip", v)}
+              placeholder="811 01"
+            />
+          </div>
+        </div>
+
+        <div className="card rounded-2xl p-4 sm:p-5">
+          <p className="display mb-3.5 text-sm font-bold text-[var(--text-1)]">Spôsob dopravy</p>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {SHIPPING_OPTIONS.map((option) => (
+              <button
+                type="button"
+                key={option.id}
+                onClick={() => setShipping(option.id)}
+                className={`option-card ${option.id === shipping ? "selected" : ""}`}
+              >
+                <span className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-[var(--text-1)]">{option.label}</span>
+                  <span className="mono text-xs text-[var(--text-2)]">
+                    {option.price === 0 ? "zdarma" : formatEuro(option.price)}
+                  </span>
+                </span>
+                <span className="mt-0.5 block text-xs text-[var(--text-3)]">{option.description}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="card rounded-2xl p-4 sm:p-5">
+          <p className="display mb-3.5 text-sm font-bold text-[var(--text-1)]">Spôsob platby</p>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            {PAYMENT_OPTIONS.map((option) => (
+              <button
+                type="button"
+                key={option.id}
+                onClick={() => setPayment(option.id)}
+                className={`option-card ${option.id === payment ? "selected" : ""}`}
+              >
+                <span className="block text-sm font-semibold text-[var(--text-1)]">{option.label}</span>
+                <span className="mt-0.5 block text-xs text-[var(--text-3)]">{option.description}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={onBack}
+          className="w-fit text-xs font-semibold text-[var(--text-3)] hover:text-[var(--text-1)]"
+        >
+          ← Späť na konfiguráciu
+        </button>
+      </section>
+
+      <section className="flex flex-col gap-4 lg:col-span-2">
+        <div className="card sticky top-4 rounded-2xl p-4 sm:p-5">
+          <p className="display mb-3.5 text-sm font-bold text-[var(--text-1)]">Súhrn objednávky</p>
+          <div className="flex flex-col gap-2 text-sm">
+            <SummaryRow label="Súbor" value={summary.fileName} mono />
+            <SummaryRow label="Materiál" value={summary.materialName} />
+            <SummaryRow label="Farba" value={summary.colorLabel} />
+            <SummaryRow label="Výplň" value={summary.infillLabel} />
+            <SummaryRow label="Počet kusov" value={String(summary.quantity)} />
+            <SummaryRow label="Doprava" value={shippingOption.label} />
+          </div>
+          <div className="mt-4 flex items-center justify-between border-t border-[var(--border-soft)] pt-4">
+            <span className="text-sm font-semibold text-[var(--text-1)]">Celkom s DPH</span>
+            <span className="grad-text mono text-xl font-bold">{formatEuro(totalWithShipping)}</span>
+          </div>
+          <button
+            type="submit"
+            className="btn-gradient mt-4 w-full rounded-xl px-6 py-3.5 text-sm font-bold text-white"
+          >
+            Záväzne objednať
+          </button>
+        </div>
+      </section>
+    </form>
+  );
+}
+
+interface FieldProps {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  type?: string;
+  error?: boolean;
+  full?: boolean;
+}
+
+function Field({ label, value, onChange, placeholder, type = "text", error, full }: FieldProps) {
+  return (
+    <label className={`flex flex-col gap-1 ${full ? "sm:col-span-2" : ""}`}>
+      <span className="text-xs font-semibold text-[var(--text-2)]">{label}</span>
+      <input
+        type={type}
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        className={`field-input ${error ? "field-error" : ""}`}
+      />
+    </label>
+  );
+}
+
+function SummaryRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-[var(--text-3)]">{label}</span>
+      <span className={`truncate text-right text-[var(--text-1)] ${mono ? "mono text-xs" : ""}`}>{value}</span>
+    </div>
+  );
+}
