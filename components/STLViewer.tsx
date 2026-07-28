@@ -70,6 +70,7 @@ export default function STLViewer({ file, onDimensions, onError }: STLViewerProp
           color: 0x2563eb,
           metalness: 0.15,
           roughness: 0.4,
+          side: THREE.DoubleSide,
         });
         mesh = new THREE.Mesh(geometry, material);
         scene.add(mesh);
