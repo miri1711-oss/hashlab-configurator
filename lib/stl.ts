@@ -2,13 +2,12 @@ import * as THREE from "three";
 import { ModelDimensions } from "./types";
 
 /**
- * Vypočíta reálne rozmery (bounding box) a objem modelu z geometrie
- * parsovanej z nahraného STL súboru. Predpokladá, že súradnice v STL
- * súbore sú v milimetroch (bežný štandard pri 3D tlači).
+ * Vypocita realne rozmery (bounding box) a objem modelu z geometrie
+ * parsovanej z nahrateho STL suboru. Predpoklada, ze suradnice v STL
+ * subore su v milimetroch (bezny standard pri 3D tlaci).
  *
- * Objem sa počíta súčtom znamienkových objemov štvorstenov (tetrahedra)
- * tvorených každým trojuholníkom siete a počiatkom - štandardná metóda
- * na výpočet objemu uzavretého trojuholníkového meshu (divergence theorem).
+ * Objem sa pocita suctom znamienkovych objemov stvorstenov (tetrahedra)
+ * tvorenych kazdym trojuholnikom siete a pociatkom.
  */
 export function computeDimensionsFromGeometry(geometry: THREE.BufferGeometry): ModelDimensions {
   geometry.computeBoundingBox();

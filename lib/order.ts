@@ -25,7 +25,7 @@ export interface PaymentOption {
 
 export const SHIPPING_OPTIONS: ShippingOption[] = [
   { id: "courier", label: "Kuriér", description: "Doručenie na adresu, 1-2 pracovné dni", price: 4.9 },
-  { id: "pickup", label: "Osobný odber", description: "hashlab.sk, Bratislava", price: 0 },
+  { id: "pickup", label: "Osobný odber", description: "hashlab.sk, Spišská Nová Ves", price: 0 },
 ];
 
 export const PAYMENT_OPTIONS: PaymentOption[] = [

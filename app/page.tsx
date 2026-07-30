@@ -11,7 +11,8 @@ import InfillPanel from "@/components/InfillPanel";
 import QuantityPanel from "@/components/QuantityPanel";
 import CheckoutFooter from "@/components/CheckoutFooter";
 import CheckoutFlow from "@/components/CheckoutFlow";
-import { COLORS, INFILL_OPTIONS, MATERIALS } from "@/lib/constants";
+import PaintPanel from "@/components/PaintPanel";
+import { COLORS, COLOR_HEX, INFILL_OPTIONS, MATERIALS } from "@/lib/constants";
 import { calculateTotalPrice, estimateDeliveryDate, estimateDimensions, formatEuro } from "@/lib/pricing";
 import { ConfiguratorState, ModelDimensions } from "@/lib/types";
 
@@ -29,6 +30,11 @@ export default function Home() {
   const [state, setState] = useState<ConfiguratorState>(INITIAL_STATE);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [deliveryLabel, setDeliveryLabel] = useState("—");
+
+  const [paintModeEnabled, setPaintModeEnabled] = useState(false);
+  const [paintColorId, setPaintColorId] = useState("antracitova");
+  const [paintResetSignal, setPaintResetSignal] = useState(0);
+  const [hasPaintedRegions, setHasPaintedRegions] = useState(false);
 
   const material = MATERIALS.find((m) => m.id === state.materialId)!;
   const infill = INFILL_OPTIONS.find((i) => i.id === state.infillId)!;
@@ -51,6 +57,7 @@ export default function Home() {
       step: 2,
     }));
     setDeliveryLabel(estimateDeliveryDate());
+    setHasPaintedRegions(false);
   }
 
   function handleDimensionsComputed(dimensions: ModelDimensions) {
@@ -67,6 +74,13 @@ export default function Home() {
     setUploadedFile(null);
     setState((prev) => ({ ...prev, fileName: null, dimensions: null, step: 1 }));
     setDeliveryLabel("—");
+    setPaintModeEnabled(false);
+    setHasPaintedRegions(false);
+  }
+
+  function handleResetPaint() {
+    setPaintResetSignal((prev) => prev + 1);
+    setHasPaintedRegions(false);
   }
 
   function handleCheckout() {
@@ -97,10 +111,15 @@ export default function Home() {
               <section className="flex flex-col gap-4 lg:col-span-3">
                 <ModelViewer
                   file={uploadedFile}
+                  colorHex={COLOR_HEX[state.colorId] ?? 0x2563eb}
+                  paintMode={paintModeEnabled}
+                  paintColorHex={COLOR_HEX[paintColorId] ?? 0x111527}
+                  resetPaintSignal={paintResetSignal}
                   onFileSelected={handleFileSelected}
                   onRemove={handleRemoveFile}
                   onDimensions={handleDimensionsComputed}
                   onPreviewError={handlePreviewError}
+                  onPaintApplied={() => setHasPaintedRegions(true)}
                 />
                 <InfoPanel dimensions={state.dimensions} fileName={state.fileName} />
               </section>
@@ -113,6 +132,15 @@ export default function Home() {
                 <ColorPanel
                   selectedId={state.colorId}
                   onSelect={(colorId) => setState((prev) => ({ ...prev, colorId }))}
+                />
+                <PaintPanel
+                  enabled={paintModeEnabled}
+                  onToggle={setPaintModeEnabled}
+                  paintColorId={paintColorId}
+                  onColorSelect={setPaintColorId}
+                  onReset={handleResetPaint}
+                  hasPaintedRegions={hasPaintedRegions}
+                  disabled={!uploadedFile?.name.toLowerCase().endsWith(".stl")}
                 />
                 <InfillPanel
                   selectedId={state.infillId}
@@ -138,6 +166,7 @@ export default function Home() {
               fileName: state.fileName ?? "—",
               materialName: material.name,
               colorLabel: COLORS.find((c) => c.id === state.colorId)?.label ?? "",
+              hasCustomPaint: hasPaintedRegions,
               infillLabel: infill.label,
               quantity: state.quantity,
               itemsPrice: totalPrice,
