@@ -43,6 +43,18 @@ export const COLORS: ColorOption[] = [
   { id: "siva", label: "Sivá", swatch: "#a3a9c2" },
 ];
 
+// Pevná hex farba pre 3D náhľad modelu (swatch vyššie je len CSS pre UI
+// tlačidlo a pri "modrá" je to gradient, čo three.js nevie použiť priamo).
+export const COLOR_HEX: Record<string, number> = {
+  antracitova: 0x1e2536,
+  biela: 0xf3f5f9,
+  cervena: 0xef4444,
+  modra: 0x2563eb,
+  zelena: 0x10b981,
+  zlta: 0xf59e0b,
+  siva: 0xa3a9c2,
+};
+
 export const INFILL_OPTIONS: InfillOption[] = [
   { id: "light", label: "Ľahká", percent: 15, multiplier: 1 },
   { id: "standard", label: "Štandardná", percent: 30, multiplier: 1.15 },

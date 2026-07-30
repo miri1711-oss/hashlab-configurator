@@ -15,6 +15,7 @@ export interface OrderSummaryData {
   fileName: string;
   materialName: string;
   colorLabel: string;
+  hasCustomPaint?: boolean;
   infillLabel: string;
   quantity: number;
   itemsPrice: number;
@@ -238,6 +239,9 @@ export default function CheckoutFlow({ summary, onBack, onStartOver }: CheckoutF
             <SummaryRow label="Súbor" value={summary.fileName} mono />
             <SummaryRow label="Materiál" value={summary.materialName} />
             <SummaryRow label="Farba" value={summary.colorLabel} />
+            {summary.hasCustomPaint && (
+              <SummaryRow label="Viac farieb" value="Áno (namaľované na modeli)" />
+            )}
             <SummaryRow label="Výplň" value={summary.infillLabel} />
             <SummaryRow label="Počet kusov" value={String(summary.quantity)} />
             <SummaryRow label="Doprava" value={shippingOption.label} />

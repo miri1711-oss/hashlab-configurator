@@ -51,6 +51,25 @@ súborov než STL), takže pre ne zostáva zobrazená animovaná náhrada s
 upozornením, že živý náhľad nie je k dispozícii — a rozmery sa naďalej
 odhadujú (`estimateDimensions()` v `lib/pricing.ts`).
 
+## Farba modelu, maľovanie viacerých farieb a tmavý/svetlý náhľad
+
+- **Farba sa reálne aplikuje na 3D náhľad.** Kliknutie na farebný swatch
+  prefarbí materiál modelu priamo (`STLViewer.tsx` má samostatný, ľahký
+  `useEffect` len na zmenu farby - nemusí sa kvôli tomu nanovo parsovať celý
+  STL súbor). Mapovanie farba → hex hodnota je v `lib/constants.ts`
+  (`COLOR_HEX`).
+- **Viac farieb na jednom modeli** (`components/PaintPanel.tsx`) - namiesto
+  nahrávania druhého STL súboru sa dá zapnúť "maľovací" režim a **kliknúť
+  priamo na model**. Klik vyberie celú súvislú plochu okolo miesta kliku
+  (napr. celý QR kód), nie len jeden bod - výber sa "rozleje" po susedných
+  trojuholníkoch siete, kým nenarazí na ostrú hranu (`lib/paint.ts`,
+  `floodFillRegion`, prah 35°). Farbenie funguje cez vertex colors
+  (`MeshStandardMaterial({ vertexColors: true })`), takže nepotrebuje druhý
+  súbor ani predpripravené oddelené časti modelu.
+- **Prepínač tmavého/svetlého pozadia náhľadu** (ikona slnko/mesiac vľavo
+  hore v 3D okne) - pri čiernych alebo tmavých modeloch je na pôvodnom
+  tmavom pozadí zle vidno detaily, svetlé pozadie to rieši.
+
 ## Order flow (krok 3 - Platba)
 
 Pôvodný HTML prototyp mal tlačidlo "Pokračovať", ktoré len prepínalo indikátor
