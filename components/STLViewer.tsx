@@ -40,7 +40,7 @@ export default function STLViewer({
   const paintModeRef = useRef(paintMode);
   const rebuildColorsRef = useRef<() => void>(() => {});
 
- useEffect(() => {
+  useEffect(() => {
     baseColorRef.current.setHex(colorHex);
     rebuildColorsRef.current();
   }, [colorHex]);

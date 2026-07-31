@@ -41,8 +41,12 @@ export default function CheckoutFlow({ summary, onBack, onStartOver }: CheckoutF
   const [details, setDetails] = useState<CustomerDetails>(EMPTY_DETAILS);
   const [shipping, setShipping] = useState<ShippingMethod>("courier");
   const [payment, setPayment] = useState<PaymentMethod>("card");
+  const [packetaPointName, setPacketaPointName] = useState("");
   const [errors, setErrors] = useState<Partial<Record<keyof CustomerDetails, boolean>>>({});
+  const [packetaError, setPacketaError] = useState(false);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
 
   const shippingOption = SHIPPING_OPTIONS.find((o) => o.id === shipping)!;
   const totalWithShipping = summary.itemsPrice + shippingOption.price;
@@ -67,14 +71,79 @@ export default function CheckoutFlow({ summary, onBack, onStartOver }: CheckoutF
       valid = false;
     }
 
+    const needsPacketaPoint = shipping === "packeta" && !packetaPointName.trim();
+    setPacketaError(needsPacketaPoint);
+    if (needsPacketaPoint) valid = false;
+
     setErrors(nextErrors);
     return valid;
   }
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!validate()) return;
-    setOrderNumber(generateOrderNumber());
+
+    const newOrderNumber = generateOrderNumber();
+    setIsSaving(true);
+    setSaveFailed(false);
+
+    const orderPayload = {
+      orderNumber: newOrderNumber,
+      fullName: details.fullName,
+      email: details.email,
+      phone: details.phone,
+      street: details.street,
+      city: details.city,
+      zip: details.zip,
+      shippingMethod: shipping,
+      packetaPointName: shipping === "packeta" ? packetaPointName : null,
+      paymentMethod: payment,
+      fileName: summary.fileName,
+      materialName: summary.materialName,
+      colorLabel: summary.colorLabel,
+      hasCustomPaint: Boolean(summary.hasCustomPaint),
+      infillLabel: summary.infillLabel,
+      quantity: summary.quantity,
+      totalPrice: totalWithShipping,
+    };
+
+    try {
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orderPayload),
+      });
+      if (!response.ok) setSaveFailed(true);
+
+      if (payment === "card") {
+        // Objednávka je uložená so stavom "pending_payment" - teraz
+        // presmerujeme na Stripe, kde zákazník platbu skutočne dokončí.
+        // Potvrdenie prijde späť cez webhook (lib/db.ts -> updateOrderStatus).
+        const checkoutResponse = await fetch("/api/checkout-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderId: newOrderNumber,
+            totalPrice: totalWithShipping,
+            email: details.email,
+          }),
+        });
+        const checkoutData = await checkoutResponse.json();
+        if (checkoutResponse.ok && checkoutData.url) {
+          window.location.href = checkoutData.url;
+          return; // opúšťame stránku, netreba už nič nastavovať
+        }
+        // Ak sa platbu nepodarilo vytvoriť (napr. Stripe ešte nie je
+        // nastavený), aspoň zobrazíme lokálne potvrdenie, nech zákazník
+        // nezostane visieť bez odpovede.
+        setSaveFailed(true);
+      }
+    } catch {
+      setSaveFailed(true);
+    } finally {
+      setIsSaving(false);
+      setOrderNumber(newOrderNumber);
+    }
   }
 
   if (orderNumber) {
@@ -99,6 +168,12 @@ export default function CheckoutFlow({ summary, onBack, onStartOver }: CheckoutF
         <p className="text-sm text-[var(--text-3)]">
           Potvrdenie sme poslali na {details.email}. Odhadované doručenie: {summary.deliveryLabel}.
         </p>
+        {saveFailed && (
+          <p className="text-xs text-amber-600">
+            Objednávka sa nepodarilo uložiť do databázy (skús to prosím nahlásiť podpore) - údaje vyššie máš
+            aspoň zaznamenané tu.
+          </p>
+        )}
 
         <div className="mt-2 w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-2)] p-4 text-left text-sm">
           <div className="flex justify-between py-1">
@@ -113,6 +188,12 @@ export default function CheckoutFlow({ summary, onBack, onStartOver }: CheckoutF
             <span className="text-[var(--text-3)]">Doprava</span>
             <span className="text-[var(--text-1)]">{shippingOption.label}</span>
           </div>
+          {shipping === "packeta" && packetaPointName && (
+            <div className="flex justify-between py-1">
+              <span className="text-[var(--text-3)]">Výdajné miesto</span>
+              <span className="text-[var(--text-1)]">{packetaPointName}</span>
+            </div>
+          )}
           <div className="mt-1 flex justify-between border-t border-[var(--border-soft)] pt-2 font-bold">
             <span className="text-[var(--text-1)]">Celkom</span>
             <span className="grad-text mono">{formatEuro(totalWithShipping)}</span>
@@ -186,7 +267,7 @@ export default function CheckoutFlow({ summary, onBack, onStartOver }: CheckoutF
 
         <div className="card rounded-2xl p-4 sm:p-5">
           <p className="display mb-3.5 text-sm font-bold text-[var(--text-1)]">Spôsob dopravy</p>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             {SHIPPING_OPTIONS.map((option) => (
               <button
                 type="button"
@@ -204,11 +285,28 @@ export default function CheckoutFlow({ summary, onBack, onStartOver }: CheckoutF
               </button>
             ))}
           </div>
+
+          {shipping === "packeta" && (
+            <div className="mt-3">
+              <Field
+                label="Výdajné miesto"
+                value={packetaPointName}
+                error={packetaError}
+                onChange={setPacketaPointName}
+                placeholder="Napr. Packeta Box, Hlavná 1, Spišská Nová Ves"
+                full
+              />
+              <p className="mt-1 text-xs text-[var(--text-3)]">
+                Dočasné riešenie - skutočný výber výdajného miesta cez Packeta mapu doplníme, keď bude k
+                dispozícii API prístup.
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="card rounded-2xl p-4 sm:p-5">
           <p className="display mb-3.5 text-sm font-bold text-[var(--text-1)]">Spôsob platby</p>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {PAYMENT_OPTIONS.map((option) => (
               <button
                 type="button"
@@ -221,6 +319,11 @@ export default function CheckoutFlow({ summary, onBack, onStartOver }: CheckoutF
               </button>
             ))}
           </div>
+          {payment === "card" && (
+            <p className="mt-2 text-xs text-[var(--text-3)]">
+              Po kliknutí na "Záväzne objednať" budeš presmerovaný/á na bezpečnú platobnú stránku Stripe.
+            </p>
+          )}
         </div>
 
         <button
@@ -252,9 +355,10 @@ export default function CheckoutFlow({ summary, onBack, onStartOver }: CheckoutF
           </div>
           <button
             type="submit"
-            className="btn-gradient mt-4 w-full rounded-xl px-6 py-3.5 text-sm font-bold text-white"
+            disabled={isSaving}
+            className="btn-gradient mt-4 w-full rounded-xl px-6 py-3.5 text-sm font-bold text-white disabled:opacity-60"
           >
-            Záväzne objednať
+            {isSaving ? "Odosielam..." : "Záväzne objednať"}
           </button>
         </div>
       </section>
