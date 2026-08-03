@@ -10,6 +10,7 @@ interface ModelViewerProps {
   paintMode: boolean;
   paintColorHex: number;
   resetPaintSignal: number;
+  undoPaintSignal: number;
   onFileSelected: (file: File) => void;
   onRemove: () => void;
   onDimensions: (dimensions: ModelDimensions) => void;
@@ -68,6 +69,7 @@ export default function ModelViewer({
   paintMode,
   paintColorHex,
   resetPaintSignal,
+  undoPaintSignal,
   onFileSelected,
   onRemove,
   onDimensions,
@@ -231,6 +233,7 @@ export default function ModelViewer({
                 paintMode={paintMode}
                 paintColorHex={paintColorHex}
                 resetPaintSignal={resetPaintSignal}
+                undoPaintSignal={undoPaintSignal}
                 onDimensions={onDimensions}
                 onError={onPreviewError}
                 onPaintApplied={onPaintApplied}

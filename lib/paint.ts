@@ -7,7 +7,7 @@ export interface TriangleMeshData {
   adjacency: number[][];
 }
 
-function vertexKey(x: number, y: number, z: number, precision = 4): string {
+function vertexKey(x: number, y: number, z: number, precision = 3): string {
   return `${x.toFixed(precision)},${y.toFixed(precision)},${z.toFixed(precision)}`;
 }
 
@@ -89,7 +89,7 @@ export function buildTriangleMeshData(geometry: THREE.BufferGeometry): TriangleM
 export function floodFillRegion(
   mesh: TriangleMeshData,
   startTriangle: number,
-  maxAngleDeg = 35
+  maxAngleDeg = 55
 ): Set<number> {
   const cosThreshold = Math.cos((maxAngleDeg * Math.PI) / 180);
   const visited = new Set<number>([startTriangle]);

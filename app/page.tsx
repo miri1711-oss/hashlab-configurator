@@ -34,6 +34,7 @@ export default function Home() {
   const [paintModeEnabled, setPaintModeEnabled] = useState(false);
   const [paintColorId, setPaintColorId] = useState("antracitova");
   const [paintResetSignal, setPaintResetSignal] = useState(0);
+  const [paintUndoSignal, setPaintUndoSignal] = useState(0);
   const [hasPaintedRegions, setHasPaintedRegions] = useState(false);
 
   const material = MATERIALS.find((m) => m.id === state.materialId)!;
@@ -83,6 +84,10 @@ export default function Home() {
     setHasPaintedRegions(false);
   }
 
+  function handleUndoPaint() {
+    setPaintUndoSignal((prev) => prev + 1);
+  }
+
   function handleCheckout() {
     if (!state.dimensions) return;
     setState((prev) => ({ ...prev, step: 3 }));
@@ -115,6 +120,7 @@ export default function Home() {
                   paintMode={paintModeEnabled}
                   paintColorHex={COLOR_HEX[paintColorId] ?? 0x111527}
                   resetPaintSignal={paintResetSignal}
+                  undoPaintSignal={paintUndoSignal}
                   onFileSelected={handleFileSelected}
                   onRemove={handleRemoveFile}
                   onDimensions={handleDimensionsComputed}
@@ -138,6 +144,7 @@ export default function Home() {
                   onToggle={setPaintModeEnabled}
                   paintColorId={paintColorId}
                   onColorSelect={setPaintColorId}
+                  onUndo={handleUndoPaint}
                   onReset={handleResetPaint}
                   hasPaintedRegions={hasPaintedRegions}
                   disabled={!uploadedFile?.name.toLowerCase().endsWith(".stl")}
