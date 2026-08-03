@@ -165,6 +165,38 @@ neodosiela, len sa zobrazí potvrdenie v prehliadači). Ak máte vo firme
 zdokumentovaný presný order flow (Figma, interná dokumentácia a pod.), tento
 krok bude potrebné podľa neho upraviť.
 
+## Automatizované testy
+
+Projekt má testy pre najcitlivejšiu logiku - výpočet ceny (peniaze) a
+"inteligentný výber plochy" pri maľovaní farieb na modeli (algoritmus).
+Testovací framework je [Vitest](https://vitest.dev) (rýchly, štandard pre
+Next.js projekty).
+
+**Spustenie:**
+```bash
+npm install
+npm test
+```
+
+**Čo je otestované:**
+- `lib/pricing.test.ts` - výpočet ceny (objem × cena materiálu × výplň),
+  minimálna cena objednávky, množstevná zľava (aj hraničný prípad "presne na
+  prahu"), formátovanie eur
+- `lib/paint.test.ts` - flood-fill výber plochy pri kliknutí na model:
+  overuje, že sa výber správne "zastaví" na ostrej hrane (napr. medzi QR
+  kódom a stojanom) a nerozleje sa na celý model
+
+**Čo (zatiaľ) otestované nie je** - dobré ďalšie kroky, ak budete chcieť
+pokračovať:
+- Formulár objednávky (`CheckoutFlow.tsx`) - vyžaduje React Testing Library
+- API endpointy (`/api/orders`, `/api/checkout-session`) - vyžaduje mock
+  databázy a Stripe
+- End-to-end test celého nákupného flow (Playwright) - simuluje skutočného
+  používateľa v prehliadači od nahratia súboru po platbu
+
+Tieto testy sa dajú doplniť neskôr, keď bude čas - momentálne pokrývajú tú
+časť kódu, kde by chyba stála najviac (nesprávna cena, zle vyfarbený model).
+
 ## Poznámky k portovaniu
 
 - Pôvodný vanilla-JS stav (`document.getElementById(...)`, manuálne
