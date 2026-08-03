@@ -7,6 +7,7 @@ interface PaintPanelProps {
   onToggle: (enabled: boolean) => void;
   paintColorId: string;
   onColorSelect: (id: string) => void;
+  onUndo: () => void;
   onReset: () => void;
   hasPaintedRegions: boolean;
   disabled: boolean;
@@ -17,6 +18,7 @@ export default function PaintPanel({
   onToggle,
   paintColorId,
   onColorSelect,
+  onUndo,
   onReset,
   hasPaintedRegions,
   disabled,
@@ -84,14 +86,24 @@ export default function PaintPanel({
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={onReset}
-            disabled={!hasPaintedRegions}
-            className="w-fit text-xs font-semibold text-[var(--text-3)] hover:text-[var(--text-1)] disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Vymazať maľovanie
-          </button>
+          <div className="flex gap-4">
+            <button
+              type="button"
+              onClick={onUndo}
+              disabled={!hasPaintedRegions}
+              className="w-fit text-xs font-semibold text-[var(--text-3)] hover:text-[var(--text-1)] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              ← Krok späť
+            </button>
+            <button
+              type="button"
+              onClick={onReset}
+              disabled={!hasPaintedRegions}
+              className="w-fit text-xs font-semibold text-[var(--text-3)] hover:text-[var(--text-1)] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Vymazať maľovanie
+            </button>
+          </div>
         </div>
       )}
     </div>

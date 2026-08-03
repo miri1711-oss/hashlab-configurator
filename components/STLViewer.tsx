@@ -14,6 +14,7 @@ interface STLViewerProps {
   paintMode: boolean;
   paintColorHex: number;
   resetPaintSignal: number;
+  undoPaintSignal: number;
   onDimensions: (dimensions: ModelDimensions) => void;
   onError: () => void;
   onPaintApplied?: () => void;
@@ -27,6 +28,7 @@ export default function STLViewer({
   paintMode,
   paintColorHex,
   resetPaintSignal,
+  undoPaintSignal,
   onDimensions,
   onError,
   onPaintApplied,
@@ -34,6 +36,9 @@ export default function STLViewer({
   const containerRef = useRef<HTMLDivElement>(null);
   const colorAttrRef = useRef<THREE.BufferAttribute | null>(null);
   const triangleOverridesRef = useRef<Map<number, THREE.Color>>(new Map());
+  // História kliknutí pri maľovaní - každý záznam si pamätá, akú farbu mali
+  // dotknuté trojuholníky PRED týmto klikom, aby sa dal krok vrátiť späť.
+  const paintHistoryRef = useRef<Map<number, THREE.Color | null>[]>([]);
   const meshDataRef = useRef<TriangleMeshData | null>(null);
   const baseColorRef = useRef(new THREE.Color(colorHex));
   const paintColorRef = useRef(new THREE.Color(paintColorHex));
@@ -54,9 +59,25 @@ export default function STLViewer({
   // Vymazanie namaľovaných oblastí na požiadanie (tlačidlo "Vymazať maľovanie").
   useEffect(() => {
     triangleOverridesRef.current.clear();
+    paintHistoryRef.current = [];
     rebuildColorsRef.current();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resetPaintSignal]);
+
+  // Vrátenie posledného kliknutia pri maľovaní (tlačidlo "Krok späť").
+  useEffect(() => {
+    const lastAction = paintHistoryRef.current.pop();
+    if (!lastAction) return;
+    for (const [triangleIndex, previousColor] of lastAction) {
+      if (previousColor) {
+        triangleOverridesRef.current.set(triangleIndex, previousColor);
+      } else {
+        triangleOverridesRef.current.delete(triangleIndex);
+      }
+    }
+    rebuildColorsRef.current();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [undoPaintSignal]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -65,6 +86,7 @@ export default function STLViewer({
     let animationId = 0;
     let disposed = false;
     triangleOverridesRef.current = new Map();
+    paintHistoryRef.current = [];
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 10000);
@@ -140,10 +162,13 @@ export default function STLViewer({
       const meshData = meshDataRef.current;
       if (!hits.length || hits[0].faceIndex === undefined || !meshData) return;
 
-      const region = floodFillRegion(meshData, hits[0].faceIndex, 35);
+      const region = floodFillRegion(meshData, hits[0].faceIndex, 55);
+      const previousState = new Map<number, THREE.Color | null>();
       for (const t of region) {
+        previousState.set(t, triangleOverridesRef.current.get(t)?.clone() ?? null);
         triangleOverridesRef.current.set(t, paintColorRef.current.clone());
       }
+      paintHistoryRef.current.push(previousState);
       rebuildColors();
       onPaintApplied?.();
     }

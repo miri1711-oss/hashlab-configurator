@@ -136,9 +136,17 @@ sú skutočne zaplatené.
   priamo na model**. Klik vyberie celú súvislú plochu okolo miesta kliku
   (napr. celý QR kód), nie len jeden bod - výber sa "rozleje" po susedných
   trojuholníkoch siete, kým nenarazí na ostrú hranu (`lib/paint.ts`,
-  `floodFillRegion`, prah 35°). Farbenie funguje cez vertex colors
+  `floodFillRegion`, prah 55°, tolerancia zhody vrcholov 0,001 mm - STL
+  súradnice majú z podstaty formátu obmedzenú presnosť, príliš prísna zhoda
+  by drobné susediace časti modelu vyhodnotila ako nedotýkajúce sa a
+  rozbila by výber na malé kúsky). Farbenie funguje cez vertex colors
   (`MeshStandardMaterial({ vertexColors: true })`), takže nepotrebuje druhý
   súbor ani predpripravené oddelené časti modelu.
+- **"Krok späť" pri maľovaní** - vráti len posledné kliknutie (nie celú
+  stránku). Toto je zámerne oddelené od šípky "späť" v prehliadači, ktorá je
+  funkcia prehliadača mimo kontroly appky a pri jednostránkovej aplikácii by
+  vždy vrátila na úplný začiatok - preto má appka vlastné tlačidlo namiesto
+  spoliehania sa na prehliadač.
 - **Prepínač tmavého/svetlého pozadia náhľadu** (ikona slnko/mesiac vľavo
   hore v 3D okne) - pri čiernych alebo tmavých modeloch je na pôvodnom
   tmavom pozadí zle vidno detaily, svetlé pozadie to rieši.
