@@ -169,6 +169,7 @@ export default function Home() {
           </>
         ) : (
           <CheckoutFlow
+            file={uploadedFile}
             summary={{
               fileName: state.fileName ?? "—",
               materialName: material.name,

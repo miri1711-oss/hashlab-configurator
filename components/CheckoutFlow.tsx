@@ -23,6 +23,7 @@ export interface OrderSummaryData {
 }
 
 interface CheckoutFlowProps {
+  file: File | null;
   summary: OrderSummaryData;
   onBack: () => void;
   onStartOver: () => void;
@@ -37,7 +38,7 @@ const EMPTY_DETAILS: CustomerDetails = {
   zip: "",
 };
 
-export default function CheckoutFlow({ summary, onBack, onStartOver }: CheckoutFlowProps) {
+export default function CheckoutFlow({ file, summary, onBack, onStartOver }: CheckoutFlowProps) {
   const [details, setDetails] = useState<CustomerDetails>(EMPTY_DETAILS);
   const [shipping, setShipping] = useState<ShippingMethod>("courier");
   const [payment, setPayment] = useState<PaymentMethod>("card");
@@ -87,6 +88,27 @@ export default function CheckoutFlow({ summary, onBack, onStartOver }: CheckoutF
     setIsSaving(true);
     setSaveFailed(false);
 
+    // Najprv nahráme skutočný STL súbor do úložiska - bez toho by sa
+    // objednávka uložila len s menom súboru, nie s dátami potrebnými na tlač.
+    let modelFileUrl: string | null = null;
+    if (file) {
+      try {
+        const uploadForm = new FormData();
+        uploadForm.append("file", file);
+        const uploadResponse = await fetch("/api/upload-stl", {
+          method: "POST",
+          body: uploadForm,
+        });
+        const uploadData = await uploadResponse.json();
+        if (uploadResponse.ok && uploadData.url) {
+          modelFileUrl = uploadData.url;
+        }
+      } catch {
+        // Nahratie súboru zlyhalo - objednávka sa napriek tomu uloží (aspoň
+        // kontaktné údaje a konfiguráciu), ale bude ju treba doriešiť ručne.
+      }
+    }
+
     const orderPayload = {
       orderNumber: newOrderNumber,
       fullName: details.fullName,
@@ -99,6 +121,7 @@ export default function CheckoutFlow({ summary, onBack, onStartOver }: CheckoutF
       packetaPointName: shipping === "packeta" ? packetaPointName : null,
       paymentMethod: payment,
       fileName: summary.fileName,
+      modelFileUrl,
       materialName: summary.materialName,
       colorLabel: summary.colorLabel,
       hasCustomPaint: Boolean(summary.hasCustomPaint),

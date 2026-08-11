@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
       packetaPointName: body.packetaPointName ? String(body.packetaPointName) : null,
       paymentMethod,
       fileName: String(body.fileName ?? ""),
+      modelFileUrl: body.modelFileUrl ? String(body.modelFileUrl) : null,
       materialName: String(body.materialName ?? ""),
       colorLabel: String(body.colorLabel ?? ""),
       hasCustomPaint: Boolean(body.hasCustomPaint),

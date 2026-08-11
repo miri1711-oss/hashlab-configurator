@@ -23,3 +23,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+-e 
+# python
+__pycache__/
+scripts/na_vytlacenie/
