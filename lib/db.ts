@@ -12,6 +12,7 @@ export interface OrderRecord {
   packetaPointName: string | null;
   paymentMethod: string;
   fileName: string;
+  modelFileUrl: string | null;
   materialName: string;
   colorLabel: string;
   hasCustomPaint: boolean;
@@ -51,8 +52,14 @@ async function ensureOrdersTable() {
       status TEXT NOT NULL DEFAULT 'pending'
     );
   `;
-  // Pre pripad, ze tabulka uz existovala z predoslej verzie bez stlpca status.
+  // Pre pripad, ze tabulka uz existovala z predoslej verzie bez niektoreho stlpca.
   await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'pending';`;
+  await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS model_file_url TEXT;`;
+  // Stav v tlacovej fronte - nezavisly od stavu platby. "pending" = caka na
+  // spracovanie automatizacnym skriptom pri tlaciarni, "sent_to_printer" =
+  // subor uz bol poslany do tlaciarne a caka na clovka, aby zalozil filament
+  // a spustil tlac.
+  await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS print_status TEXT NOT NULL DEFAULT 'pending';`;
   tableEnsured = true;
 }
 
@@ -62,13 +69,13 @@ export async function insertOrder(order: OrderRecord) {
     INSERT INTO orders (
       id, full_name, email, phone, street, city, zip,
       shipping_method, packeta_point_name, payment_method,
-      file_name, material_name, color_label, has_custom_paint,
+      file_name, model_file_url, material_name, color_label, has_custom_paint,
       infill_label, quantity, total_price, status
     ) VALUES (
       ${order.id}, ${order.fullName}, ${order.email}, ${order.phone},
       ${order.street}, ${order.city}, ${order.zip},
       ${order.shippingMethod}, ${order.packetaPointName}, ${order.paymentMethod},
-      ${order.fileName}, ${order.materialName}, ${order.colorLabel}, ${order.hasCustomPaint},
+      ${order.fileName}, ${order.modelFileUrl}, ${order.materialName}, ${order.colorLabel}, ${order.hasCustomPaint},
       ${order.infillLabel}, ${order.quantity}, ${order.totalPrice}, ${order.status}
     )
     ON CONFLICT (id) DO NOTHING;
@@ -80,8 +87,31 @@ export async function updateOrderStatus(id: string, status: string) {
   await sql`UPDATE orders SET status = ${status} WHERE id = ${id};`;
 }
 
+export async function updatePrintStatus(id: string, printStatus: string) {
+  await ensureOrdersTable();
+  await sql`UPDATE orders SET print_status = ${printStatus} WHERE id = ${id};`;
+}
+
 export async function listOrders() {
   await ensureOrdersTable();
   const result = await sql`SELECT * FROM orders ORDER BY created_at DESC LIMIT 200;`;
+  return result.rows;
+}
+
+/**
+ * Objednávky pripravené na tlač - zaplatené (alebo dobierka) a ešte
+ * neposlané do tlačovej fronty. Toto číta automatizačný skript pri
+ * tlačiarni namiesto ručného prehľadávania všetkých objednávok.
+ */
+export async function listPrintQueue() {
+  await ensureOrdersTable();
+  const result = await sql`
+    SELECT * FROM orders
+    WHERE print_status = 'pending'
+      AND status IN ('paid', 'cod')
+      AND model_file_url IS NOT NULL
+    ORDER BY created_at ASC
+    LIMIT 50;
+  `;
   return result.rows;
 }
