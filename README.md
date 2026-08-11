@@ -124,45 +124,69 @@ v databáze automaticky označí ako `status: "paid"` (cez webhook), takže
 šéf v prehľade objednávok (`/api/orders?key=...`) uvidí, ktoré objednávky
 sú skutočne zaplatené.
 
-## Prepojenie s tlačiarňou (Bambu Lab) - automatizácia tlače
+## Prepojenie s tlačiarňou (Bambu Lab) - plná automatizácia tlače
 
-Cieľ: zákazník zaplatí objednávku → súbor je pripravený na vyzdvihnutie pri
-tlačiarni bez ručného prehľadávania emailov/databázy, a už narezaný súbor
-sa dá poslať do tlačiarne jedným príkazom (nie USB kľúčom).
+Cieľ: zákazník zaplatí objednávku → STL sa **automaticky nareže** (výber
+materiálu, výplne, auto-podpery) → hotový súbor sa **automaticky pošle**
+tlačiarni cez sieť → ty už len založíš filament a stlačíš tlačiť.
 
 **Čo je hotové:**
 - Skutočný STL súbor sa ukladá (nie len jeho názov) - do Vercel Blob
   storage pri odoslaní objednávky (`app/api/upload-stl/route.ts`, volá sa z
-  `CheckoutFlow.tsx` pred uložením objednávky). URL súboru sa ukladá do
-  databázy (`lib/db.ts`, stĺpec `model_file_url`).
-- Objednávky majú okrem stavu platby (`status`) aj **stav tlače**
-  (`print_status`) - `"pending"` kým čaká, `"sent_to_printer"` po spracovaní.
-- `app/api/print-queue/route.ts` - endpoint len pre tlačovú frontu:
-  - `GET /api/print-queue?key=...` - vráti zaplatené objednávky, ktoré ešte
-    neboli spracované
-  - `PATCH /api/print-queue?key=...` - označí objednávku ako spracovanú
-- `scripts/print_bridge.py` - Python skript, ktorý beží na počítači **pri
-  tlačiarni** (na tej istej lokálnej sieti), a robí dve veci:
-  1. Sťahuje nové zaplatené objednávky (STL súbory) do `na_vytlacenie/`
-  2. Sleduje priečinok `narezane/` a už **narezané** (`.gcode.3mf`) súbory
-     automaticky pošle do tlačiarne cez lokálnu sieť pomocou knižnice
-     [`bambu-connect`](https://pypi.org/project/bambu-connect)
+  `CheckoutFlow.tsx`). URL súboru je v databáze (`lib/db.ts`, stĺpec
+  `model_file_url`).
+- Objednávky majú stav tlače (`print_status`) - `"pending"` kým čaká,
+  `"sent_to_printer"` po spracovaní.
+- `app/api/print-queue/route.ts` - `GET` vráti nespracované zaplatené
+  objednávky, `PATCH` označí objednávku ako hotovú.
+- `scripts/print_bridge.py` - beží na počítači **pri tlačiarni** (tá istá
+  lokálna sieť) a pre každú novú objednávku:
+  1. Stiahne STL súbor
+  2. **Automaticky ho nareže** cez `Bambu Studio` v headless (CLI) režime,
+     s automatickým generovaním podpier (auto-supports - bežná, spoľahlivá
+     funkcia slicera)
+  3. Hotový výsledok **automaticky pošle tlačiarni** cez lokálnu sieť
+     (knižnica [`bambu-connect`](https://pypi.org/project/bambu-connect))
 
-**Prečo je slicing (narezanie STL na G-code) stále ručný krok:**
-Slicing (výber materiálu, farby, výplne, podpier, teplôt...) je citlivá
-vec - zlé nastavenie môže znehodnotiť tlač alebo poškodiť tlačiareň.
-Preto obsluha stále otvorí STL v Bambu Studio / OrcaSlicer a narezanie
-spraví ručne podľa údajov priamo v názve stiahnutého súboru - ale **odoslanie
-hotového výsledku do tlačiarne už prebehne automaticky**.
+**Dôležitá výnimka - materiál "Ultra Detail" (Resin):** Resin sa fyzicky
+**nedá tlačiť na FDM Bambu tlačiarni** (je to úplne iný typ tlačiarne -
+SLA/živicová). Objednávky s týmto materiálom skript vždy preskočí a nechá
+súbor v `na_vytlacenie/` na ručné vyriešenie (napr. poslať inému
+dodávateľovi s resin tlačiarňou, alebo zákazníkovi navrhnúť iný materiál).
+
+### Prečo je potrebný jednorazový export profilov z Bambu Studio
+
+Narezanie potrebuje presné nastavenia **tvojej konkrétnej tlačiarne**
+(rozmery podložky, teploty, kalibrácia) - tie sa nedajú len tak "uhádnuť"
+zvonka. Preto sa **raz** vyexportujú tie isté profily, čo už bežne
+používaš a poznáš ako funkčné.
 
 ### Nastavenie krok za krokom
 
-**1. Príprava tlačiarne** (raz, na dotykovej obrazovke tlačiarne):
-   - Zapni **Developer Mode** (Nastavenia)
-   - Zapni **LAN Only mode**, over si **IP adresu**, **Access Code** a
-     **sériové číslo** (Nastavenia → LAN Only, alebo Bambu Studio → Device)
+**1. Príprava tlačiarne** (raz, na dotykovej obrazovke):
+   - Zapni **Developer Mode**
+   - Zapni **LAN Only mode**, over si **IP adresu**, **Access Code**,
+     **sériové číslo**
 
-**2. Inštalácia a nastavenie skriptu:**
+**2. OrcaSlicer netreba** - používame priamo Bambu Studio, ktorú už máš nainštalovanú
+
+**3. V Bambu Studio priprav a exportuj profily** (Printer/Filament/Process
+   nastavenia → tlačidlo "..." → Export), s **zapnutými auto-podperami**
+   (Support → Support ON), a ulož ich presne do `scripts/profiles/` pod
+   týmito názvami:
+   ```
+   profiles/machine.json                 - profil tvojej tlačiarne
+   profiles/filament_standard.json       - PLA (Štandardný plast)
+   profiles/filament_durable.json        - PETG (Odolný plast)
+   profiles/filament_outdoor.json        - ASA (Exteriér & Teplo)
+   profiles/filament_flex.json           - TPU (Pružný gumený)
+   profiles/process_light.json           - výplň 15 % (Ľahká)
+   profiles/process_standard.json        - výplň 30 % (Štandardná)
+   profiles/process_strong.json          - výplň 80 % (Pevná)
+   ```
+   (Ultra Detail/Resin zámerne nemá profil - pozri vyššie.)
+
+**4. Inštalácia a nastavenie skriptu:**
 ```bash
 cd scripts
 pip install requests bambu-connect
@@ -173,30 +197,36 @@ export PRINTER_ACCESS_CODE="12345678"
 export PRINTER_SERIAL="01P00A000000000"
 ```
 
-**3. Otvor `print_bridge.py` a nastav `AUTO_SEND_TO_PRINTER = True`**
-   (kým je `False`, skript len vypíše, čo by poslal - bezpečná poistka na
-   prvé vyskúšanie, nič sa naozaj neodošle).
+**5. Prvý test naprázdno** (`AUTO_SEND_TO_PRINTER = False`, predvolené) -
+   spusti `python3 print_bridge.py`, počkaj na testovaciu objednávku,
+   **ručne otvor výsledný `.gcode.3mf` v Bambu Studio a skontroluj náhľad**
+   (orientáciu, podpery, či to vyzerá rozumne) - až keď si istá, že to
+   vyzerá dobre, pokračuj ďalej.
 
-**4. Spusti:**
+**6. Zapni ostrý režim:**
 ```bash
 python3 print_bridge.py
 ```
+(v súbore nastav `AUTO_SEND_TO_PRINTER = True`, alebo cez terminál:
+`sed -i '' 's/AUTO_SEND_TO_PRINTER = False/AUTO_SEND_TO_PRINTER = True/' print_bridge.py`)
 
 ### Ako to funguje v praxi
 
-1. Skript stiahne novú objednávku do `na_vytlacenie/HL-2026-XXXX_material_farba_vyplna_1ks.stl`
-2. Otvoríš ten súbor v Bambu Studio / OrcaSlicer, nastavíš podľa názvu
-   súboru (materiál, farba, výplň) a exportuješ narezaný výsledok ako
-   `.gcode.3mf` **s rovnakým názvom** do priečinka `narezane/`
-3. Skript si to do 30 sekúnd všimne a automaticky pošle do tlačiarne cez
-   lokálnu sieť
-4. Ty už len prídeš k tlačiarni, založíš správny filament a stlačíš tlačiť
-   na dotykovej obrazovke
+1. Zákazník zaplatí → skript stiahne, automaticky nareže a pošle do
+   tlačiarne bez zásahu
+2. Ty prídeš k tlačiarni, založíš filament podľa toho, čo ukazuje
+   tlačový front na obrazovke, a stlačíš tlačiť
+3. **Výnimka:** ak objednávka má materiál bez profilu (Resin) alebo
+   rezanie z nejakého dôvodu zlyhá, súbor ostane v `na_vytlacenie/` a
+   objednávka sa neoznačí ako hotová - vybavíš ju ručne (narežeš sama a
+   uložíš do `narezane/`, skript to aj tak pošle do tlačiarne)
 
-**Poznámka:** `bambu-connect` je nezávislý (neoficiálny) projekt tretej
-strany, nie oficiálne API od Bambu Lab. Ak sa po aktualizácii knižnice
-zmení názov niektorej metódy, pozri si aktuálne príklady v jej repozitári:
-https://github.com/mattcar15/bambu-connect (priečinok `examples/`).
+**Poznámka:** `bambu-connect` a headless CLI Bambu Studio sú nezávislé
+(neoficiálne/menej zdokumentované) nástroje, nie oficiálne API od Bambu Lab.
+Ak sa po aktualizácii zmenia príkazy, pozri si aktuálnu dokumentáciu:
+https://github.com/mattcar15/bambu-connect a
+https://github.com/bambulab/BambuStudio/wiki/Command-Line-Usage.
+
 
 ## Farba modelu, maľovanie viacerých farieb a tmavý/svetlý náhľad
 
