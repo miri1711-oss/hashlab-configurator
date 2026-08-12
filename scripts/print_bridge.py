@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 print_bridge.py - lokalny "mostik" medzi hashlab.sk objednavkami a tlaciarnou.
 
@@ -239,7 +240,7 @@ def send_file_to_printer(gcode_path: Path) -> None:
     from bambu_connect import BambuClient
 
     client = BambuClient(PRINTER_IP, PRINTER_ACCESS_CODE, PRINTER_SERIAL)
-    client.send_print_job(str(gcode_path))
+    client.start_print(str(gcode_path))
 
 
 def process_order_queue() -> None:
@@ -275,7 +276,7 @@ def process_order_queue() -> None:
                 print(f"[tlaciaren] OK odoslane do tlaciarne: {sliced_path.name}")
             else:
                 print(
-                    f"[tlaciaren] (vypnute) Nastav AUTO_SEND_TO_PRINTER = True, "
+                    f"[tlaciaren] (vypnute) Nastav AUTO_SEND_TO_PRINTER = False, "
                     f"aby sa poslalo: {sliced_path.name}"
                 )
 
