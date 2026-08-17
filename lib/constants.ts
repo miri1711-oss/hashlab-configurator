@@ -1,4 +1,4 @@
-import { ColorOption, InfillOption, MaterialOption } from "./types";
+import { ColorOption, InfillOption, LayerHeightOption, MaterialOption } from "./types";
 
 export const MATERIALS: MaterialOption[] = [
   {
