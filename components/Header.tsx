@@ -23,7 +23,7 @@ export default function Header({ step }: HeaderProps) {
 
       <div className="relative flex items-center gap-3">
         <div className="flex items-center gap-2">
-          <div className="hash-mark flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden">
             <img
               src="/logo.png"
               alt="hashlab.sk logo"
