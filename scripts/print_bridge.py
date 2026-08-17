@@ -100,7 +100,7 @@ def open_in_bambu_studio(stl_path: Path) -> None:
     klikne Slice a Print - appka (naziva pripojena k tlaciarni) sama
     zabezpeci spravny vyber materialu z AMS.
     """
-    subprocess.run(["open", "-a", BAMBU_STUDIO_APP_NAME, str(stl_path)], check=True)
+    subprocess.run(["open", "-n", "-a", "/Applications/BambuStudio.app", str(stl_path)], check=True)
 
 
 def process_order_queue() -> None:
