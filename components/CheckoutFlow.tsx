@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import {
   CustomerDetails,
   PAYMENT_OPTIONS,
@@ -49,6 +49,39 @@ export default function CheckoutFlow({ file, summary, onBack, onStartOver }: Che
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
+
+  const packetaApiKey = process.env.NEXT_PUBLIC_PACKETA_API_KEY;
+
+  // Nacitanie oficialnej Packeta kniznice na vyber vydajneho miesta (widget
+  // v6) - kym nie je nastaveny API kluc (zdarma, registracia na
+  // client.packeta.com), zostava zakaznikom k dispozicii len textove pole.
+  useEffect(() => {
+    if (!packetaApiKey) return;
+    if (document.getElementById("packeta-widget-lib")) return;
+    const script = document.createElement("script");
+    script.id = "packeta-widget-lib";
+    script.src = "https://widget.packeta.com/v6/www/js/library.js";
+    script.async = true;
+    document.head.appendChild(script);
+  }, [packetaApiKey]);
+
+  function openPacketaWidget() {
+    const packetaWindow = window as unknown as {
+      Packeta?: { Widget: { pick: (apiKey: string, callback: (point: unknown) => void, options?: object) => void } };
+    };
+    if (!packetaApiKey || !packetaWindow.Packeta) return;
+    packetaWindow.Packeta.Widget.pick(
+      packetaApiKey,
+      (point: unknown) => {
+        const selected = point as { name?: string } | null;
+        if (selected?.name) {
+          setPacketaPointName(selected.name);
+          setPacketaError(false);
+        }
+      },
+      { country: "sk,cz" }
+    );
+  }
 
   const shippingOption = SHIPPING_OPTIONS.find((o) => o.id === shipping)!;
   const totalWithShipping = summary.itemsPrice + shippingOption.price;
@@ -313,18 +346,42 @@ export default function CheckoutFlow({ file, summary, onBack, onStartOver }: Che
 
           {shipping === "packeta" && (
             <div className="mt-3">
-              <Field
-                label="Výdajné miesto"
-                value={packetaPointName}
-                error={packetaError}
-                onChange={setPacketaPointName}
-                placeholder="Napr. Packeta Box, Hlavná 1, Spišská Nová Ves"
-                full
-              />
-              <p className="mt-1 text-xs text-[var(--text-3)]">
-                Dočasné riešenie - skutočný výber výdajného miesta cez Packeta mapu doplníme, keď bude k
-                dispozícii API prístup.
-              </p>
+              {packetaApiKey ? (
+                <div>
+                  <button
+                    type="button"
+                    onClick={openPacketaWidget}
+                    className={`option-card w-full text-left ${packetaError ? "field-error" : ""}`}
+                  >
+                    <span className="text-sm font-semibold text-[var(--text-1)]">
+                      {packetaPointName || "Vybrať výdajné miesto"}
+                    </span>
+                    {!packetaPointName && (
+                      <span className="mt-0.5 block text-xs text-[var(--text-3)]">
+                        Klikni pre otvorenie mapy výdajných miest
+                      </span>
+                    )}
+                  </button>
+                  {packetaError && (
+                    <p className="mt-1 text-xs text-red-600">Vyberte prosím výdajné miesto.</p>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <Field
+                    label="Výdajné miesto"
+                    value={packetaPointName}
+                    error={packetaError}
+                    onChange={setPacketaPointName}
+                    placeholder="Napr. Packeta Box, Hlavná 1, Spišská Nová Ves"
+                    full
+                  />
+                  <p className="mt-1 text-xs text-[var(--text-3)]">
+                    Dočasné riešenie - skutočný výber výdajného miesta cez Packeta mapu doplníme, keď bude k
+                    dispozícii API prístup.
+                  </p>
+                </>
+              )}
             </div>
           )}
         </div>

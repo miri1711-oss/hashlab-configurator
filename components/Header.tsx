@@ -41,17 +41,17 @@ export default function Header({ step }: HeaderProps) {
         </span>
       </div>
 
-      <div className="relative flex items-center gap-3 text-xs font-semibold">
+      <div className="relative flex flex-wrap items-center gap-x-2 gap-y-2 text-[11px] font-semibold sm:gap-3 sm:text-xs">
         {steps.map((s, i) => (
-          <div key={s} className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5">
+          <div key={s} className="flex items-center gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-1 sm:gap-1.5">
               <span className={`step-dot ${s <= step ? "active" : ""}`} />
               <span className={s <= step ? "text-[var(--text-1)]" : "text-[var(--text-3)]"}>
                 {s}. {STEP_LABELS[s]}
               </span>
             </div>
             {i < steps.length - 1 && (
-              <span className="step-line">
+              <span className="step-line hidden sm:inline-block">
                 <span
                   className="fill"
                   style={{ width: step >= (s + 1) ? "100%" : "0%" }}
@@ -62,7 +62,7 @@ export default function Header({ step }: HeaderProps) {
         ))}
         <a
           href="/kontakt"
-          className="ml-2 rounded-lg border border-[var(--border)] px-3 py-1.5 text-[var(--text-3)] transition-colors hover:border-[var(--blue-2)] hover:text-[var(--text-1)]"
+          className="ml-0 rounded-lg border border-[var(--border)] px-2.5 py-1 text-[var(--text-3)] transition-colors hover:border-[var(--blue-2)] hover:text-[var(--text-1)] sm:ml-2 sm:px-3 sm:py-1.5"
         >
           Kontakt
         </a>
