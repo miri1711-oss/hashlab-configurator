@@ -100,6 +100,12 @@ export async function listOrders() {
   return result.rows;
 }
 
+export async function getOrderById(id: string) {
+  await ensureOrdersTable();
+  const result = await sql`SELECT * FROM orders WHERE id = ${id} LIMIT 1;`;
+  return result.rows[0] ?? null;
+}
+
 /**
  * Objednávky pripravené na tlač - zaplatené (alebo dobierka) a ešte
  * neposlané do tlačovej fronty. Toto číta automatizačný skript pri

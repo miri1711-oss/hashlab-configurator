@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { updateOrderStatus } from "@/lib/db";
+import { getOrderById, updateOrderStatus } from "@/lib/db";
+import { sendOrderConfirmationEmail } from "@/lib/email";
 
 export async function POST(request: NextRequest) {
   if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET) {
@@ -25,6 +26,21 @@ export async function POST(request: NextRequest) {
     if (orderId) {
       try {
         await updateOrderStatus(orderId, "paid");
+        const order = await getOrderById(orderId);
+        if (order) {
+          await sendOrderConfirmationEmail({
+            id: order.id,
+            email: order.email,
+            fullName: order.full_name,
+            materialName: order.material_name,
+            colorLabel: order.color_label,
+            infillLabel: order.infill_label,
+            layerHeightLabel: order.layer_height_label,
+            quantity: order.quantity,
+            totalPrice: Number(order.total_price),
+            shippingMethod: order.shipping_method,
+          });
+        }
       } catch (error) {
         console.error("Nepodarilo sa označiť objednávku ako zaplatenú:", error);
       }
