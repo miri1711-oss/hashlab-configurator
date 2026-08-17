@@ -16,6 +16,16 @@ export interface InfillOption {
   multiplier: number;
 }
 
+export type LayerHeightId = "draft" | "standard" | "fine";
+
+export interface LayerHeightOption {
+  id: LayerHeightId;
+  label: string;
+  mm: number;
+  description: string;
+  recommended?: boolean;
+}
+
 export interface ColorOption {
   id: string;
   label: string;
@@ -37,6 +47,7 @@ export interface ConfiguratorState {
   materialId: MaterialId;
   colorId: string;
   infillId: InfillId;
+  layerHeightId: LayerHeightId;
   quantity: number;
   step: ConfiguratorStep;
 }

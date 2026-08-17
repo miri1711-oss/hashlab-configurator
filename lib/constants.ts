@@ -61,6 +61,18 @@ export const INFILL_OPTIONS: InfillOption[] = [
   { id: "strong", label: "Pevná", percent: 80, multiplier: 1.4 },
 ];
 
+export const LAYER_HEIGHTS: LayerHeightOption[] = [
+  { id: "draft", label: "Hrubšia", mm: 0.28, description: "Rýchlejšia tlač, viditeľnejšie vrstvy" },
+  {
+    id: "standard",
+    label: "Štandardná",
+    mm: 0.2,
+    description: "Bežne používaná hodnota - dobrý pomer rýchlosti a kvality",
+    recommended: true,
+  },
+  { id: "fine", label: "Jemnejšia", mm: 0.12, description: "Hladší povrch, dlhšia tlač" },
+];
+
 export const STEP_LABELS: Record<1 | 2 | 3, string> = {
   1: "Nahrať",
   2: "Konfigurácia",

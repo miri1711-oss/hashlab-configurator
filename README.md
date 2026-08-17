@@ -228,6 +228,38 @@ https://github.com/mattcar15/bambu-connect a
 https://github.com/bambulab/BambuStudio/wiki/Command-Line-Usage.
 
 
+## Kontaktný formulár (Resend)
+
+Stránka `/kontakt` umožňuje zákazníkom poslať otázku - správa sa odošle
+emailom na `mirkap1711@gmail.com` (nastavené v `app/api/contact/route.ts`,
+konštanta `CONTACT_RECIPIENT` - zmeň, keď budete chcieť prejsť na šéfov
+email).
+
+**Nastavenie (jednorazovo, vo Verceli):**
+1. Zaregistruj sa na [resend.com](https://resend.com) (má bezplatný plán)
+2. V dashboarde vytvor **API Key**
+3. Vo Verceli: **Settings → Environment Variables** → pridaj `RESEND_API_KEY`
+   s hodnotou tohto kľúča (Production + Preview)
+4. Redeploy
+
+**Dôležité obmedzenie zadarmo:** kým si neoveríte vlastnú doménu v Resend,
+dá sa posielať len z ich testovacej adresy (`onboarding@resend.dev`) - to
+v kóde už je nastavené a funguje to na posielanie na `mirkap1711@gmail.com`
+bez ďalšieho nastavovania. Ak by ste chceli posielať z vlastnej adresy
+(napr. `info@hashlab.sk`), treba v Resend overiť doménu `hashlab.sk`
+(pridanie DNS záznamov) - vtedy uprav aj `from` pole v `route.ts`.
+
+## Nahrávanie .obj súborov a výber výšky vrstvy
+
+- Konfigurátor teraz prijíma okrem `.stl` aj `.obj` súbory - 3D náhľad,
+  výpočet rozmerov aj maľovanie farieb fungujú pre oba formáty rovnako
+  (`components/STLViewer.tsx` používa `OBJLoader` pre `.obj` a zlúči
+  viacero objektov v súbore do jednej geometrie).
+- Pribudol nový krok výberu **výšky vrstvy** (`components/LayerHeightPanel.tsx`,
+  hodnoty v `lib/constants.ts` → `LAYER_HEIGHTS`) - hodnota `0.2 mm` je
+  označená ako odporúčaná/predvolená. Vybraná hodnota sa ukladá k objednávke
+  (stĺpec `layer_height_label`) a zobrazuje sa aj v prehľade objednávky.
+
 ## Farba modelu, maľovanie viacerých farieb a tmavý/svetlý náhľad
 
 - **Farba sa reálne aplikuje na 3D náhľad.** Kliknutie na farebný swatch

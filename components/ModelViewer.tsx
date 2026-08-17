@@ -80,7 +80,10 @@ export default function ModelViewer({
   const [dragActive, setDragActive] = useState(false);
   const [theme, setTheme] = useState<ViewerTheme>("dark");
   const loaded = Boolean(file);
-  const isStl = useMemo(() => file?.name.toLowerCase().endsWith(".stl") ?? false, [file]);
+  const isViewable = useMemo(
+    () => /\.(stl|obj)$/i.test(file?.name ?? ""),
+    [file]
+  );
   const isDark = theme === "dark";
 
   function handleDrag(e: DragEvent<HTMLDivElement>, active: boolean) {
@@ -200,7 +203,7 @@ export default function ModelViewer({
               </svg>
             </div>
             <p className={`mb-1 text-sm font-semibold ${isDark ? "text-white" : "text-[var(--text-1)]"}`}>
-              Presuňte sem .stl alebo .step súbor
+              Presuňte sem .stl, .obj alebo .step súbor
             </p>
             <p className={`mb-5 text-xs ${isDark ? "text-slate-400" : "text-[var(--text-3)]"}`}>
               alebo vyberte súbor z počítača · max. 200 MB
@@ -214,7 +217,7 @@ export default function ModelViewer({
             <input
               ref={fileInputRef}
               type="file"
-              accept=".stl,.step,.stp"
+              accept=".stl,.obj,.step,.stp"
               className="hidden"
               onChange={(e) => {
                 const selected = e.target.files?.[0];
@@ -226,7 +229,7 @@ export default function ModelViewer({
 
         {loaded && file && (
           <div className="animate-fade-in absolute inset-0 flex items-center justify-center">
-            {isStl ? (
+            {isViewable ? (
               <STLViewer
                 file={file}
                 colorHex={colorHex}
@@ -278,12 +281,12 @@ export default function ModelViewer({
                   />
                 </div>
                 <p className={`mono max-w-[220px] text-[11px] ${isDark ? "text-slate-400" : "text-[var(--text-3)]"}`}>
-                  Živý 3D náhľad je dostupný len pre .stl súbory
+                  Živý 3D náhľad je dostupný len pre .stl a .obj súbory
                 </p>
               </div>
             )}
 
-            {paintMode && isStl && (
+            {paintMode && isViewable && (
               <div
                 className={`pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-lg border px-3 py-1.5 text-[11px] font-semibold backdrop-blur ${badgeClass}`}
               >

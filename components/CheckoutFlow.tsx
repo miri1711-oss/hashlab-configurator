@@ -17,6 +17,7 @@ export interface OrderSummaryData {
   colorLabel: string;
   hasCustomPaint?: boolean;
   infillLabel: string;
+  layerHeightLabel: string;
   quantity: number;
   itemsPrice: number;
   deliveryLabel: string;
@@ -126,6 +127,7 @@ export default function CheckoutFlow({ file, summary, onBack, onStartOver }: Che
       colorLabel: summary.colorLabel,
       hasCustomPaint: Boolean(summary.hasCustomPaint),
       infillLabel: summary.infillLabel,
+      layerHeightLabel: summary.layerHeightLabel,
       quantity: summary.quantity,
       totalPrice: totalWithShipping,
     };
@@ -369,6 +371,7 @@ export default function CheckoutFlow({ file, summary, onBack, onStartOver }: Che
               <SummaryRow label="Viac farieb" value="Áno (namaľované na modeli)" />
             )}
             <SummaryRow label="Výplň" value={summary.infillLabel} />
+            <SummaryRow label="Výška vrstvy" value={summary.layerHeightLabel} />
             <SummaryRow label="Počet kusov" value={String(summary.quantity)} />
             <SummaryRow label="Doprava" value={shippingOption.label} />
           </div>

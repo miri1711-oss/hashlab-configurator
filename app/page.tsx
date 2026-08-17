@@ -8,11 +8,12 @@ import InfoPanel from "@/components/InfoPanel";
 import MaterialPanel from "@/components/MaterialPanel";
 import ColorPanel from "@/components/ColorPanel";
 import InfillPanel from "@/components/InfillPanel";
+import LayerHeightPanel from "@/components/LayerHeightPanel";
 import QuantityPanel from "@/components/QuantityPanel";
 import CheckoutFooter from "@/components/CheckoutFooter";
 import CheckoutFlow from "@/components/CheckoutFlow";
 import PaintPanel from "@/components/PaintPanel";
-import { COLORS, COLOR_HEX, INFILL_OPTIONS, MATERIALS } from "@/lib/constants";
+import { COLORS, COLOR_HEX, INFILL_OPTIONS, LAYER_HEIGHTS, MATERIALS } from "@/lib/constants";
 import { calculateTotalPrice, estimateDeliveryDate, estimateDimensions, formatEuro } from "@/lib/pricing";
 import { ConfiguratorState, ModelDimensions } from "@/lib/types";
 
@@ -22,6 +23,7 @@ const INITIAL_STATE: ConfiguratorState = {
   materialId: "standard",
   colorId: "antracitova",
   infillId: "light",
+  layerHeightId: "standard",
   quantity: 1,
   step: 1,
 };
@@ -39,6 +41,7 @@ export default function Home() {
 
   const material = MATERIALS.find((m) => m.id === state.materialId)!;
   const infill = INFILL_OPTIONS.find((i) => i.id === state.infillId)!;
+  const layerHeight = LAYER_HEIGHTS.find((l) => l.id === state.layerHeightId)!;
 
   const totalPrice = useMemo(
     () => calculateTotalPrice(state.dimensions, material, infill, state.quantity),
@@ -47,14 +50,14 @@ export default function Home() {
 
   function handleFileSelected(file: File) {
     setUploadedFile(file);
-    const isStl = file.name.toLowerCase().endsWith(".stl");
+    const isViewable = /\.(stl|obj)$/i.test(file.name);
     setState((prev) => ({
       ...prev,
       fileName: file.name,
-      // Pre .stl počkáme na reálne rozmery vypočítané z geometrie v STLViewer.
-      // Pre iné formáty (.step/.stp), ktoré three.js priamo nevie parsovať,
-      // použijeme odhad ako predtým.
-      dimensions: isStl ? null : estimateDimensions(),
+      // Pre .stl a .obj počkáme na reálne rozmery vypočítané z geometrie
+      // v STLViewer. Pre iné formáty (.step/.stp), ktoré three.js priamo
+      // nevie parsovať, použijeme odhad ako predtým.
+      dimensions: isViewable ? null : estimateDimensions(),
       step: 2,
     }));
     setDeliveryLabel(estimateDeliveryDate());
@@ -147,11 +150,15 @@ export default function Home() {
                   onUndo={handleUndoPaint}
                   onReset={handleResetPaint}
                   hasPaintedRegions={hasPaintedRegions}
-                  disabled={!uploadedFile?.name.toLowerCase().endsWith(".stl")}
+                  disabled={!uploadedFile || !/\.(stl|obj)$/i.test(uploadedFile.name)}
                 />
                 <InfillPanel
                   selectedId={state.infillId}
                   onSelect={(infillId) => setState((prev) => ({ ...prev, infillId }))}
+                />
+                <LayerHeightPanel
+                  selectedId={state.layerHeightId}
+                  onSelect={(layerHeightId) => setState((prev) => ({ ...prev, layerHeightId }))}
                 />
                 <QuantityPanel
                   quantity={state.quantity}
@@ -176,6 +183,7 @@ export default function Home() {
               colorLabel: COLORS.find((c) => c.id === state.colorId)?.label ?? "",
               hasCustomPaint: hasPaintedRegions,
               infillLabel: infill.label,
+              layerHeightLabel: layerHeight.label,
               quantity: state.quantity,
               itemsPrice: totalPrice,
               deliveryLabel,

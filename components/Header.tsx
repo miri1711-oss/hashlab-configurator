@@ -23,8 +23,13 @@ export default function Header({ step }: HeaderProps) {
 
       <div className="relative flex items-center gap-3">
         <div className="flex items-center gap-2">
-          <div className="hash-mark flex h-9 w-9 shrink-0 items-center justify-center rounded-xl">
-            <span className="display text-lg font-bold leading-none text-white">#</span>
+          <div className="hash-mark flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl">
+            <img
+              src="/logo.png"
+              alt="hashlab.sk logo"
+              className="h-full w-full object-contain"
+              style={{ imageRendering: "auto" }}
+            />
           </div>
           <span className="display text-[16px] font-bold tracking-tight text-[var(--text-1)]">
             hashlab<span className="grad-text">.sk</span>
@@ -36,7 +41,7 @@ export default function Header({ step }: HeaderProps) {
         </span>
       </div>
 
-      <div className="relative flex items-center gap-2 text-xs font-semibold">
+      <div className="relative flex items-center gap-3 text-xs font-semibold">
         {steps.map((s, i) => (
           <div key={s} className="flex items-center gap-2">
             <div className="flex items-center gap-1.5">
@@ -55,6 +60,12 @@ export default function Header({ step }: HeaderProps) {
             )}
           </div>
         ))}
+        <a
+          href="/kontakt"
+          className="ml-2 rounded-lg border border-[var(--border)] px-3 py-1.5 text-[var(--text-3)] transition-colors hover:border-[var(--blue-2)] hover:text-[var(--text-1)]"
+        >
+          Kontakt
+        </a>
       </div>
     </header>
   );

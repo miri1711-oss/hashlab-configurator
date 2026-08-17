@@ -3,6 +3,8 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
+import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { computeDimensionsFromGeometry } from "@/lib/stl";
 import { buildTriangleMeshData, floodFillRegion, TriangleMeshData } from "@/lib/paint";
@@ -176,54 +178,86 @@ export default function STLViewer({
     renderer.domElement.addEventListener("pointerdown", handlePointerDown);
     renderer.domElement.addEventListener("pointerup", handlePointerUp);
 
+    /**
+     * OBJ subor moze obsahovat viac samostatnych objektov (kazdy so svojou
+     * geometriou) - zluci ich do jednej geometrie, aby sa dala pouzit ten
+     * isty dalsi kod (farbenie, malovanie, vypocet rozmerov) ako pri STL,
+     * ktore je vzdy jedna "trojuholnikova polievka" bez indexovania.
+     */
+    function mergeObjGroupIntoGeometry(group: THREE.Group): THREE.BufferGeometry {
+      const partGeometries: THREE.BufferGeometry[] = [];
+      group.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+          const geom = child.geometry as THREE.BufferGeometry;
+          const nonIndexed = geom.index ? geom.toNonIndexed() : geom;
+          const positionOnly = new THREE.BufferGeometry();
+          positionOnly.setAttribute("position", nonIndexed.getAttribute("position"));
+          partGeometries.push(positionOnly);
+        }
+      });
+      const merged = mergeGeometries(partGeometries, false);
+      return merged ?? new THREE.BufferGeometry();
+    }
+
+    function finishLoadingGeometry(geometry: THREE.BufferGeometry) {
+      geometry.computeVertexNormals();
+      geometry.center();
+
+      onDimensions(computeDimensionsFromGeometry(geometry));
+
+      const meshData = buildTriangleMeshData(geometry);
+      meshDataRef.current = meshData;
+
+      const colorArray = new Float32Array(geometry.getAttribute("position").count * 3);
+      const colorAttr = new THREE.BufferAttribute(colorArray, 3);
+      geometry.setAttribute("color", colorAttr);
+      colorAttrRef.current = colorAttr;
+      rebuildColors();
+
+      const material = new THREE.MeshStandardMaterial({
+        vertexColors: true,
+        metalness: 0.15,
+        roughness: 0.4,
+        side: THREE.DoubleSide,
+      });
+      mesh = new THREE.Mesh(geometry, material);
+      scene.add(mesh);
+
+      const edges = new THREE.LineSegments(
+        new THREE.EdgesGeometry(geometry, 32),
+        new THREE.LineBasicMaterial({ color: 0x7dd3fc, transparent: true, opacity: 0.2 })
+      );
+      mesh.add(edges);
+
+      geometry.computeBoundingSphere();
+      const radius = geometry.boundingSphere?.radius || 50;
+      camera.position.set(radius * 1.7, radius * 1.3, radius * 1.7);
+      camera.near = radius / 100;
+      camera.far = radius * 100;
+      camera.updateProjectionMatrix();
+      controls.target.set(0, 0, 0);
+      controls.update();
+    }
+
+    const isObj = file.name.toLowerCase().endsWith(".obj");
     const reader = new FileReader();
     reader.onload = () => {
       if (disposed || !reader.result) return;
       try {
-        const geometry = new STLLoader().parse(reader.result as ArrayBuffer);
-        geometry.computeVertexNormals();
-        geometry.center();
-
-        onDimensions(computeDimensionsFromGeometry(geometry));
-
-        const meshData = buildTriangleMeshData(geometry);
-        meshDataRef.current = meshData;
-
-        const colorArray = new Float32Array(geometry.getAttribute("position").count * 3);
-        const colorAttr = new THREE.BufferAttribute(colorArray, 3);
-        geometry.setAttribute("color", colorAttr);
-        colorAttrRef.current = colorAttr;
-        rebuildColors();
-
-        const material = new THREE.MeshStandardMaterial({
-          vertexColors: true,
-          metalness: 0.15,
-          roughness: 0.4,
-          side: THREE.DoubleSide,
-        });
-        mesh = new THREE.Mesh(geometry, material);
-        scene.add(mesh);
-
-        const edges = new THREE.LineSegments(
-          new THREE.EdgesGeometry(geometry, 32),
-          new THREE.LineBasicMaterial({ color: 0x7dd3fc, transparent: true, opacity: 0.2 })
-        );
-        mesh.add(edges);
-
-        geometry.computeBoundingSphere();
-        const radius = geometry.boundingSphere?.radius || 50;
-        camera.position.set(radius * 1.7, radius * 1.3, radius * 1.7);
-        camera.near = radius / 100;
-        camera.far = radius * 100;
-        camera.updateProjectionMatrix();
-        controls.target.set(0, 0, 0);
-        controls.update();
+        const geometry = isObj
+          ? mergeObjGroupIntoGeometry(new OBJLoader().parse(reader.result as string))
+          : new STLLoader().parse(reader.result as ArrayBuffer);
+        finishLoadingGeometry(geometry);
       } catch {
         onError();
       }
     };
     reader.onerror = () => onError();
-    reader.readAsArrayBuffer(file);
+    if (isObj) {
+      reader.readAsText(file);
+    } else {
+      reader.readAsArrayBuffer(file);
+    }
 
     function animate() {
       animationId = requestAnimationFrame(animate);

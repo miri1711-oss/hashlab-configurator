@@ -24,6 +24,7 @@ export async function POST(request: NextRequest) {
       colorLabel: String(body.colorLabel ?? ""),
       hasCustomPaint: Boolean(body.hasCustomPaint),
       infillLabel: String(body.infillLabel ?? ""),
+      layerHeightLabel: String(body.layerHeightLabel ?? "0.2 mm"),
       quantity: Number(body.quantity ?? 1),
       totalPrice: Number(body.totalPrice ?? 0),
       status: paymentMethod === "card" ? "pending_payment" : "cod",

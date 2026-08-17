@@ -17,6 +17,7 @@ export interface OrderRecord {
   colorLabel: string;
   hasCustomPaint: boolean;
   infillLabel: string;
+  layerHeightLabel: string;
   quantity: number;
   totalPrice: number;
   // "cod" - dobierka, netreba online platbu
@@ -60,6 +61,7 @@ async function ensureOrdersTable() {
   // subor uz bol poslany do tlaciarne a caka na clovka, aby zalozil filament
   // a spustil tlac.
   await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS print_status TEXT NOT NULL DEFAULT 'pending';`;
+  await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS layer_height_label TEXT NOT NULL DEFAULT '0.2 mm';`;
   tableEnsured = true;
 }
 
@@ -70,13 +72,13 @@ export async function insertOrder(order: OrderRecord) {
       id, full_name, email, phone, street, city, zip,
       shipping_method, packeta_point_name, payment_method,
       file_name, model_file_url, material_name, color_label, has_custom_paint,
-      infill_label, quantity, total_price, status
+      infill_label, layer_height_label, quantity, total_price, status
     ) VALUES (
       ${order.id}, ${order.fullName}, ${order.email}, ${order.phone},
       ${order.street}, ${order.city}, ${order.zip},
       ${order.shippingMethod}, ${order.packetaPointName}, ${order.paymentMethod},
       ${order.fileName}, ${order.modelFileUrl}, ${order.materialName}, ${order.colorLabel}, ${order.hasCustomPaint},
-      ${order.infillLabel}, ${order.quantity}, ${order.totalPrice}, ${order.status}
+      ${order.infillLabel}, ${order.layerHeightLabel}, ${order.quantity}, ${order.totalPrice}, ${order.status}
     )
     ON CONFLICT (id) DO NOTHING;
   `;
