@@ -122,6 +122,13 @@ export default function STLViewer({
     resize();
     window.addEventListener("resize", resize);
 
+    // ResizeObserver zachyti aj zmenu velkosti samotneho kontajnera (napr.
+    // prepnutie do celoobrazovkoveho nahladu), ktora nevyvola udalost
+    // "resize" na window - bez tohto by canvas zostal v starej velkosti a
+    // model by sa zobrazil zle umiestneny (napr. v rohu).
+    const resizeObserver = new ResizeObserver(() => resize());
+    resizeObserver.observe(container);
+
     const raycaster = new THREE.Raycaster();
     let mesh: THREE.Mesh | null = null;
     let pointerDownPos: { x: number; y: number } | null = null;
@@ -271,6 +278,7 @@ export default function STLViewer({
       disposed = true;
       cancelAnimationFrame(animationId);
       window.removeEventListener("resize", resize);
+      resizeObserver.disconnect();
       renderer.domElement.removeEventListener("pointerdown", handlePointerDown);
       renderer.domElement.removeEventListener("pointerup", handlePointerUp);
       controls.dispose();
