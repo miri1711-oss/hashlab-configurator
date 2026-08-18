@@ -288,6 +288,16 @@ export default function ModelViewer({
                 if (selected) onFileSelected(selected);
               }}
             />
+            <a
+              href="https://www.justfixstl.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`mt-4 text-[11px] underline-offset-2 hover:underline ${
+                isDark ? "text-slate-400" : "text-[var(--text-3)]"
+              }`}
+            >
+              Model sa nedá nahrať alebo je poškodený? Opravte si ho tu (zdarma, súbor sa nikam neposiela)
+            </a>
           </div>
         )}
 

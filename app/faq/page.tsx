@@ -15,6 +15,11 @@ const FAQ_ITEMS: FaqItem[] = [
       "Podporujeme .stl, .obj a .step/.stp súbory. Živý 3D náhľad, presný výpočet rozmerov aj maľovanie farieb sú dostupné pre .stl a .obj - pri .step sa použije odhad rozmerov.",
   },
   {
+    question: "Môj model sa nedá nahrať / appka hlási chybu - čo teraz?",
+    answer:
+      "Niekedy má súbor poškodenú geometriu (napr. diery v povrchu). Priamo pri nahrávaní modelu nájdete odkaz na bezplatný nástroj JustFixSTL, ktorý model opraví - a keďže funguje priamo vo vašom prehliadači, súbor sa nikam neposiela.",
+  },
+  {
     question: "Aké materiály ponúkate a na čo sa hodia?",
     answer:
       "Štandardný plast (PLA) - bežné modely a prototypy. Odolný plast (PETG) - mechanicky namáhané diely. Exteriér & Teplo (ASA) - UV a teplotná odolnosť, vhodné von. Pružný gumený (TPU) - ohybné, nárazuvzdorné diely. Ultra Detail (Resin) - najvyššia presnosť a hladkosť povrchu.",
