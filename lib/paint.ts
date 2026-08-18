@@ -85,6 +85,12 @@ export function buildTriangleMeshData(geometry: THREE.BufferGeometry): TriangleM
  * trojuholníky, kým sa nenarazí na ostrú hranu (uhol medzi normálami
  * susedných plôch väčší ako maxAngleDeg). Vďaka tomu klik na plochý QR kód
  * vyberie práve a len jeho plochu, nie celý zvyšok modelu.
+ *
+ * Navyše sa pridá jeden "prstenec" priamo susediacich stien (napr. bočné
+ * steny vyvýšenej časti QR kódu) - aj ked majú inú normálu (ostrú hranu),
+ * ale z tohto prstenca sa už ďalej nešíri. Vďaka tomu klik na vrchnú
+ * plochu vyvýšenej časti zafarbí aj jej bezprostredné boky, ale nerozleje
+ * sa to na zvyšok modelu (napr. základnú doštičku).
  */
 export function floodFillRegion(
   mesh: TriangleMeshData,
@@ -108,6 +114,14 @@ export function floodFillRegion(
       }
     }
   }
+
+  const border = new Set<number>();
+  for (const t of visited) {
+    for (const neighbor of mesh.adjacency[t]) {
+      if (!visited.has(neighbor)) border.add(neighbor);
+    }
+  }
+  for (const t of border) visited.add(t);
 
   return visited;
 }
