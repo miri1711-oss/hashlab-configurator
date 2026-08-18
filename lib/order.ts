@@ -39,9 +39,18 @@ export const PAYMENT_OPTIONS: PaymentOption[] = [
   { id: "cod", label: "Dobierka", description: "Platba pri prevzatí" },
 ];
 
+// Znaky bez zamenitelnych dvojic (O/0, I/1, ...), aby sa cislo objednavky
+// dalo bez chyby precitat aj rucne prepisat, ale zaroven bolo prakticky
+// neuhadnutelne - povodna verzia mala len 9000 moznych kombinacii, co bolo
+// realne skusitelne postupnym vyskusanim.
+const ORDER_NUMBER_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
 export function generateOrderNumber(): string {
   const now = new Date();
   const y = now.getFullYear();
-  const rand = Math.floor(1000 + Math.random() * 9000);
-  return `HL-${y}-${rand}`;
+  let code = "";
+  for (let i = 0; i < 8; i++) {
+    code += ORDER_NUMBER_CHARS[Math.floor(Math.random() * ORDER_NUMBER_CHARS.length)];
+  }
+  return `HL-${y}-${code}`;
 }

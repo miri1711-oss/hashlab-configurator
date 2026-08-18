@@ -198,6 +198,21 @@ export default function Home() {
             onStartOver={handleStartOver}
           />
         )}
+
+        <footer className="mt-10 flex flex-wrap items-center justify-center gap-4 pb-6 text-xs text-[var(--text-3)]">
+          <a href="/faq" className="hover:text-[var(--text-1)] hover:underline">
+            Časté otázky
+          </a>
+          <a href="/kontakt" className="hover:text-[var(--text-1)] hover:underline">
+            Kontakt
+          </a>
+          <a href="/obchodne-podmienky" className="hover:text-[var(--text-1)] hover:underline">
+            Obchodné podmienky
+          </a>
+          <a href="/ochrana-udajov" className="hover:text-[var(--text-1)] hover:underline">
+            Ochrana osobných údajov
+          </a>
+        </footer>
       </div>
     </div>
   );
