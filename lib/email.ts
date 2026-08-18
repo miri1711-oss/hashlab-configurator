@@ -17,6 +17,71 @@ const SHIPPING_LABELS: Record<string, string> = {
   pickup: "Osobný odber",
 };
 
+function buildHtmlEmail(order: OrderConfirmationData, shippingLabel: string): string {
+  const row = (label: string, value: string) => `
+    <tr>
+      <td style="padding:10px 0;border-bottom:1px solid #e9f2fa;color:#5b6b85;font-size:14px;">${label}</td>
+      <td style="padding:10px 0;border-bottom:1px solid #e9f2fa;color:#0f1b2d;font-size:14px;font-weight:600;text-align:right;">${value}</td>
+    </tr>`;
+
+  return `<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Potvrdenie objednávky</title>
+</head>
+<body style="margin:0;padding:0;">
+  <div style="background:#f4f8fc;padding:32px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+    <div style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #dfeaf7;">
+      <div style="background:linear-gradient(135deg,#3b82f6,#2563eb);padding:28px 28px 22px;">
+        <div style="display:inline-block;background:#ffffff;border-radius:10px;padding:6px;margin-bottom:10px;">
+          <img
+            src="https://hashlab-configurator.vercel.app/logo.png"
+            alt="hashlab.sk"
+            width="28"
+            height="28"
+            style="display:block;"
+          />
+        </div>
+        <p style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">hashlab.sk</p>
+        <p style="margin:6px 0 0;color:#dbeafe;font-size:14px;">Ďakujeme za objednávku!</p>
+      </div>
+      <div style="padding:28px;">
+        <p style="margin:0 0 4px;color:#0f1b2d;font-size:15px;">Dobrý deň, ${order.fullName || ""}</p>
+        <p style="margin:0 0 20px;color:#5b6b85;font-size:14px;">
+          objednávka <strong style="color:#0f1b2d;">${order.id}</strong> bola úspešne prijatá. Tu je jej súhrn:
+        </p>
+        <table style="width:100%;border-collapse:collapse;">
+          ${row("Materiál", order.materialName)}
+          ${row("Farba", order.colorLabel)}
+          ${row("Výplň", order.infillLabel)}
+          ${row("Výška vrstvy", order.layerHeightLabel)}
+          ${row("Počet kusov", String(order.quantity))}
+          ${row("Doprava", shippingLabel)}
+        </table>
+        <div style="margin-top:18px;padding-top:14px;display:flex;justify-content:space-between;align-items:center;">
+          <span style="color:#5b6b85;font-size:14px;">Celková cena</span>
+          <span style="color:#2563eb;font-size:22px;font-weight:700;">${order.totalPrice.toFixed(2)} €</span>
+        </div>
+        <p style="margin:24px 0 0;color:#5b6b85;font-size:13px;line-height:1.5;">
+          Ozveme sa vám, akonáhle bude objednávka pripravená na odoslanie/vyzdvihnutie.
+        </p>
+      </div>
+      <div style="padding:16px 28px;background:#f4f8fc;border-top:1px solid #dfeaf7;">
+        <p style="margin:0;color:#8b97ad;font-size:12px;">hashlab.sk · 3D tlač na mieru</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
+/**
+ * Posle zakaznikovi potvrdenie objednavky emailom cez Resend. Zlyhanie
+ * odoslania sa len zaloguje - nema zablokovat samotne vytvorenie/potvrdenie
+ * objednavky, ktore je dolezitejsie ako samotny email.
+ */
 export async function sendOrderConfirmationEmail(order: OrderConfirmationData): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
@@ -38,8 +103,9 @@ export async function sendOrderConfirmationEmail(order: OrderConfirmationData): 
         from: "hashlab.sk <onboarding@resend.dev>",
         to: [order.email],
         subject: `Potvrdenie objednávky ${order.id} - hashlab.sk`,
+        html: buildHtmlEmail(order, shippingLabel),
         text: [
-          `Ahoj ${order.fullName || ""},`,
+          `Dobrý deň, ${order.fullName || ""}`,
           "",
           `ďakujeme za objednávku č. ${order.id}. Tu je jej súhrn:`,
           "",
