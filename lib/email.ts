@@ -52,18 +52,18 @@ function buildHtmlEmail(order: OrderConfirmationData, shippingLabel: string): st
         <p style="margin:0 0 20px;color:#5b6b85;font-size:14px;">
           objednávka <strong style="color:#0f1b2d;">${order.id}</strong> bola úspešne prijatá. Tu je jej súhrn:
         </p>
-        <table style="width:100%;border-collapse:collapse;">
+        <table width="100%" style="width:100%;border-collapse:collapse;">
           ${row("Materiál", order.materialName)}
           ${row("Farba", order.colorLabel)}
           ${row("Výplň", order.infillLabel)}
           ${row("Výška vrstvy", order.layerHeightLabel)}
           ${row("Počet kusov", String(order.quantity))}
           ${row("Doprava", shippingLabel)}
+          <tr>
+            <td style="padding-top:16px;color:#5b6b85;font-size:14px;">Celková cena</td>
+            <td style="padding-top:16px;color:#2563eb;font-size:24px;font-weight:700;text-align:right;">${order.totalPrice.toFixed(2)} €</td>
+          </tr>
         </table>
-        <div style="margin-top:18px;padding-top:14px;display:flex;justify-content:space-between;align-items:center;">
-          <span style="color:#5b6b85;font-size:14px;">Celková cena</span>
-          <span style="color:#2563eb;font-size:22px;font-weight:700;">${order.totalPrice.toFixed(2)} €</span>
-        </div>
         <p style="margin:24px 0 0;color:#5b6b85;font-size:13px;line-height:1.5;">
           Ozveme sa vám, akonáhle bude objednávka pripravená na odoslanie/vyzdvihnutie.
         </p>
