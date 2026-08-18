@@ -129,6 +129,12 @@ export default function Home() {
                   onDimensions={handleDimensionsComputed}
                   onPreviewError={handlePreviewError}
                   onPaintApplied={() => setHasPaintedRegions(true)}
+                  paintColorId={paintColorId}
+                  onPaintColorSelect={setPaintColorId}
+                  onTogglePaintMode={setPaintModeEnabled}
+                  onUndoPaint={handleUndoPaint}
+                  onResetPaint={handleResetPaint}
+                  hasPaintedRegions={hasPaintedRegions}
                 />
                 <InfoPanel dimensions={state.dimensions} fileName={state.fileName} />
               </section>

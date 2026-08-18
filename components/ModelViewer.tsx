@@ -3,6 +3,7 @@
 import { DragEvent, useMemo, useRef, useState } from "react";
 import STLViewer from "./STLViewer";
 import { ModelDimensions } from "@/lib/types";
+import { COLORS } from "@/lib/constants";
 
 interface ModelViewerProps {
   file: File | null;
@@ -16,6 +17,14 @@ interface ModelViewerProps {
   onDimensions: (dimensions: ModelDimensions) => void;
   onPreviewError: () => void;
   onPaintApplied?: () => void;
+  // Nastroje na malovanie - zdielane s PaintPanel v bocnom paneli, aby sa
+  // dali pouzit aj v celoobrazovkovom nahlade bez opustenia rezimu.
+  paintColorId?: string;
+  onPaintColorSelect?: (colorId: string) => void;
+  onTogglePaintMode?: (enabled: boolean) => void;
+  onUndoPaint?: () => void;
+  onResetPaint?: () => void;
+  hasPaintedRegions?: boolean;
 }
 
 type ViewerTheme = "dark" | "light";
@@ -75,10 +84,17 @@ export default function ModelViewer({
   onDimensions,
   onPreviewError,
   onPaintApplied,
+  paintColorId,
+  onPaintColorSelect,
+  onTogglePaintMode,
+  onUndoPaint,
+  onResetPaint,
+  hasPaintedRegions,
 }: ModelViewerProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
   const [theme, setTheme] = useState<ViewerTheme>("dark");
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const loaded = Boolean(file);
   const isViewable = useMemo(
     () => /\.(stl|obj)$/i.test(file?.name ?? ""),
@@ -104,11 +120,15 @@ export default function ModelViewer({
     : "border-[var(--border)] bg-white/70 text-[var(--text-2)]";
 
   return (
-    <div className="grad-ring">
+    <div className={isFullscreen ? "" : "grad-ring"}>
       <div
-        className={`relative flex h-[380px] items-center justify-center overflow-hidden rounded-2xl transition-shadow sm:h-[460px] ${
-          isDark ? "bg-[#0c1220] grid-canvas" : "bg-[#eef2f7] grid-canvas-light"
-        } ${dragActive ? "drop-active" : ""}`}
+        className={`relative flex items-center justify-center overflow-hidden transition-shadow ${
+          isFullscreen
+            ? "fixed inset-0 z-[100] h-screen w-screen rounded-none"
+            : "h-[380px] rounded-2xl sm:h-[460px]"
+        } ${isDark ? "bg-[#0c1220] grid-canvas" : "bg-[#eef2f7] grid-canvas-light"} ${
+          dragActive ? "drop-active" : ""
+        }`}
         onDragEnter={(e) => handleDrag(e, true)}
         onDragOver={(e) => handleDrag(e, true)}
         onDragLeave={(e) => handleDrag(e, false)}
@@ -175,6 +195,41 @@ export default function ModelViewer({
             </svg>
           )}
         </button>
+
+        {loaded && isViewable && (
+          <button
+            type="button"
+            onClick={() => setIsFullscreen((v) => !v)}
+            title={isFullscreen ? "Zavrieť celoobrazovkový náhľad" : "Zväčšiť na celú obrazovku"}
+            className={`absolute left-14 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-lg border backdrop-blur transition-colors ${
+              isDark
+                ? "border-white/10 bg-white/10 text-white hover:bg-white/20"
+                : "border-[var(--border)] bg-white/70 text-[var(--text-2)] hover:bg-white"
+            }`}
+          >
+            {isFullscreen ? (
+              <svg width={15} height={15} viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5"
+                  stroke="currentColor"
+                  strokeWidth={1.7}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            ) : (
+              <svg width={15} height={15} viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"
+                  stroke="currentColor"
+                  strokeWidth={1.7}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            )}
+          </button>
+        )}
 
         {!loaded && (
           <div className="animate-fade-in relative flex flex-col items-center px-6 text-center">
@@ -291,6 +346,70 @@ export default function ModelViewer({
                 className={`pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-lg border px-3 py-1.5 text-[11px] font-semibold backdrop-blur ${badgeClass}`}
               >
                 Klikni na časť modelu, ktorú chceš prefarbiť
+              </div>
+            )}
+
+            {/* Kompaktný panel s nástrojmi na maľovanie - zobrazí sa len v
+                celoobrazovkovom náhľade, kde by inak bočný panel s nástrojmi
+                nebol dostupný (je prekrytý). */}
+            {isFullscreen && isViewable && onTogglePaintMode && (
+              <div
+                className={`absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-3 rounded-2xl border px-4 py-3 backdrop-blur ${
+                  isDark
+                    ? "border-white/10 bg-black/50 text-white"
+                    : "border-[var(--border)] bg-white/90 text-[var(--text-1)]"
+                }`}
+              >
+                <label className="flex items-center gap-2 text-xs font-semibold">
+                  <input
+                    type="checkbox"
+                    checked={paintMode}
+                    onChange={(e) => onTogglePaintMode(e.target.checked)}
+                    className="h-3.5 w-3.5"
+                  />
+                  Viac farieb
+                </label>
+
+                {paintMode && (
+                  <>
+                    <span className={`h-5 w-px ${isDark ? "bg-white/20" : "bg-[var(--border)]"}`} />
+                    <div className="flex items-center gap-1.5">
+                      {COLORS.map((color) => (
+                        <button
+                          key={color.id}
+                          type="button"
+                          title={color.label}
+                          onClick={() => onPaintColorSelect?.(color.id)}
+                          className={`h-6 w-6 rounded-full border-2 transition-transform hover:scale-110 ${
+                            paintColorId === color.id
+                              ? "border-[var(--blue-2)]"
+                              : "border-transparent"
+                          }`}
+                          style={{ background: color.swatch }}
+                        />
+                      ))}
+                    </div>
+                    <span className={`h-5 w-px ${isDark ? "bg-white/20" : "bg-[var(--border)]"}`} />
+                    <button
+                      type="button"
+                      onClick={onUndoPaint}
+                      disabled={!hasPaintedRegions}
+                      title="Krok späť"
+                      className="text-xs font-semibold disabled:opacity-40"
+                    >
+                      ↺ Krok späť
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onResetPaint}
+                      disabled={!hasPaintedRegions}
+                      title="Vymazať maľovanie"
+                      className="text-xs font-semibold text-red-500 disabled:opacity-40"
+                    >
+                      Vymazať
+                    </button>
+                  </>
+                )}
               </div>
             )}
 
