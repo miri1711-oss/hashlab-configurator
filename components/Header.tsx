@@ -61,8 +61,14 @@ export default function Header({ step }: HeaderProps) {
           </div>
         ))}
         <a
+          href="/faq"
+          className="rounded-lg border border-[var(--border)] px-2.5 py-1 text-[var(--text-3)] transition-colors hover:border-[var(--blue-2)] hover:text-[var(--text-1)] sm:px-3 sm:py-1.5"
+        >
+          FAQ
+        </a>
+        <a
           href="/kontakt"
-          className="ml-0 rounded-lg border border-[var(--border)] px-2.5 py-1 text-[var(--text-3)] transition-colors hover:border-[var(--blue-2)] hover:text-[var(--text-1)] sm:ml-2 sm:px-3 sm:py-1.5"
+          className="rounded-lg border border-[var(--border)] px-2.5 py-1 text-[var(--text-3)] transition-colors hover:border-[var(--blue-2)] hover:text-[var(--text-1)] sm:px-3 sm:py-1.5"
         >
           Kontakt
         </a>
