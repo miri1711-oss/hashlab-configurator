@@ -17,7 +17,7 @@ export default function TermsPage() {
         <div className="card rounded-2xl p-5 sm:p-7">
           <p className="display mb-1 text-lg font-bold text-[var(--text-1)]">Obchodné podmienky</p>
           <p className="mb-6 text-sm text-[var(--text-3)]">
-            Podmienky nákupu na hashlab.sk.
+            Podmienky nákupu na Hashlab.sk.
           </p>
 
           <div className="flex flex-col gap-5 text-sm leading-relaxed text-[var(--text-2)]">

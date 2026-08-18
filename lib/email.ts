@@ -38,13 +38,13 @@ function buildHtmlEmail(order: OrderConfirmationData, shippingLabel: string): st
         <div style="display:inline-block;background:#ffffff;border-radius:10px;padding:6px;margin-bottom:10px;">
           <img
             src="https://hashlab-configurator.vercel.app/logo.png"
-            alt="hashlab.sk"
+            alt="Hashlab.sk"
             width="28"
             height="28"
             style="display:block;"
           />
         </div>
-        <p style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">hashlab.sk</p>
+        <p style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">Hashlab.sk</p>
         <p style="margin:6px 0 0;color:#dbeafe;font-size:14px;">Ďakujeme za objednávku!</p>
       </div>
       <div style="padding:28px;">
@@ -69,7 +69,7 @@ function buildHtmlEmail(order: OrderConfirmationData, shippingLabel: string): st
         </p>
       </div>
       <div style="padding:16px 28px;background:#f4f8fc;border-top:1px solid #dfeaf7;">
-        <p style="margin:0;color:#8b97ad;font-size:12px;">hashlab.sk · 3D tlač na mieru</p>
+        <p style="margin:0;color:#8b97ad;font-size:12px;">Hashlab.sk · 3D tlač na mieru</p>
       </div>
     </div>
   </div>
@@ -102,7 +102,7 @@ export async function sendOrderConfirmationEmail(order: OrderConfirmationData): 
       body: JSON.stringify({
         from: "hashlab.sk <onboarding@resend.dev>",
         to: [order.email],
-        subject: `Potvrdenie objednávky ${order.id} - hashlab.sk`,
+        subject: `Potvrdenie objednávky ${order.id} - Hashlab.sk`,
         html: buildHtmlEmail(order, shippingLabel),
         text: [
           `Dobrý deň, ${order.fullName || ""}`,
@@ -119,7 +119,7 @@ export async function sendOrderConfirmationEmail(order: OrderConfirmationData): 
           "",
           "Ozveme sa vám, akonáhle bude objednávka pripravená na odoslanie/vyzdvihnutie.",
           "",
-          "hashlab.sk",
+          "Hashlab.sk",
         ].join("\n"),
       }),
     });

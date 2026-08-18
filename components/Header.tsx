@@ -26,13 +26,13 @@ export default function Header({ step }: HeaderProps) {
           <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden">
             <img
               src="/logo.png"
-              alt="hashlab.sk logo"
+              alt="Hashlab.sk logo"
               className="h-full w-full object-contain"
               style={{ imageRendering: "auto" }}
             />
           </div>
           <span className="display text-[16px] font-bold tracking-tight text-[var(--text-1)]">
-            hashlab<span className="grad-text">.sk</span>
+            Hashlab<span className="grad-text">.sk</span>
           </span>
         </div>
         <span className="hidden h-6 w-px bg-[var(--border)] sm:block" />

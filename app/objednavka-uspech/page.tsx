@@ -7,7 +7,7 @@ export default function OrderSuccessPage({
     <div className="flex min-h-screen items-center justify-center p-6">
       <div className="card mx-auto flex max-w-md flex-col items-center gap-4 rounded-2xl p-8 text-center">
         <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl">
-          <img src="/logo.png" alt="hashlab.sk" className="h-full w-full object-contain" />
+          <img src="/logo.png" alt="Hashlab.sk" className="h-full w-full object-contain" />
         </div>
 
         <div
