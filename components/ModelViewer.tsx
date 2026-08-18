@@ -1,6 +1,6 @@
 "use client";
 
-import { DragEvent, useMemo, useRef, useState } from "react";
+import { DragEvent, useEffect, useMemo, useRef, useState } from "react";
 import STLViewer from "./STLViewer";
 import { ModelDimensions } from "@/lib/types";
 import { COLORS } from "@/lib/constants";
@@ -96,6 +96,15 @@ export default function ModelViewer({
   const [theme, setTheme] = useState<ViewerTheme>("dark");
   const [isFullscreen, setIsFullscreen] = useState(false);
   const loaded = Boolean(file);
+
+  useEffect(() => {
+    if (!isFullscreen) return;
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === "Escape") setIsFullscreen(false);
+    }
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [isFullscreen]);
   const isViewable = useMemo(
     () => /\.(stl|obj)$/i.test(file?.name ?? ""),
     [file]
@@ -122,10 +131,10 @@ export default function ModelViewer({
   return (
     <div className={isFullscreen ? "" : "grad-ring"}>
       <div
-        className={`relative flex items-center justify-center overflow-hidden transition-shadow ${
+        className={`flex items-center justify-center overflow-hidden transition-shadow ${
           isFullscreen
-            ? "fixed inset-0 z-[100] h-screen w-screen rounded-none"
-            : "h-[380px] rounded-2xl sm:h-[460px]"
+            ? "fixed inset-0 z-[999] h-screen w-screen rounded-none"
+            : "relative h-[380px] rounded-2xl sm:h-[460px]"
         } ${isDark ? "bg-[#0c1220] grid-canvas" : "bg-[#eef2f7] grid-canvas-light"} ${
           dragActive ? "drop-active" : ""
         }`}
