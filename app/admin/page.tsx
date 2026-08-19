@@ -3,16 +3,12 @@ import { redirect } from "next/navigation";
 import { verifySessionToken, SESSION_COOKIE_NAME } from "@/lib/session";
 import { listOrders } from "@/lib/db";
 import LogoutButton from "@/components/LogoutButton";
+import PrintStatusButton from "@/components/PrintStatusButton";
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   cod: { label: "Dobierka", color: "bg-sky-50 text-sky-700" },
   pending_payment: { label: "Čaká na platbu", color: "bg-amber-50 text-amber-700" },
   paid: { label: "Zaplatené", color: "bg-emerald-50 text-emerald-700" },
-};
-
-const PRINT_STATUS_LABELS: Record<string, string> = {
-  pending: "Čaká na tlač",
-  sent_to_printer: "Poslané k tlačiarni",
 };
 
 export default async function AdminPage() {
@@ -75,8 +71,11 @@ export default async function AdminPage() {
                         {status.label}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-xs text-[var(--text-3)]">
-                      {PRINT_STATUS_LABELS[order.print_status as string] ?? (order.print_status as string)}
+                    <td className="px-4 py-3">
+                      <PrintStatusButton
+                        orderId={order.id as string}
+                        currentStatus={order.print_status as string}
+                      />
                     </td>
                     <td className="px-4 py-3 text-xs text-[var(--text-3)]">
                       {new Date(order.created_at as string).toLocaleDateString("sk-SK")}

@@ -91,6 +91,22 @@ export async function createMagicLink(token: string, email: string, expiresAt: D
 }
 
 /**
+ * Kolko prihlasovacich odkazov bolo pre tento email vytvorenych za
+ * poslednych `sinceMinutesAgo` minut - pouziva sa na obmedzenie
+ * (rate limit), aby niekto nemohol niekomu spamovat schranku opakovanymi
+ * ziadostami o prihlasenie.
+ */
+export async function countRecentMagicLinks(email: string, sinceMinutesAgo: number): Promise<number> {
+  await ensureAuthTables();
+  const result = await sql`
+    SELECT COUNT(*)::int AS count FROM magic_links
+    WHERE email = ${email}
+      AND created_at > now() - (${sinceMinutesAgo} || ' minutes')::interval;
+  `;
+  return result.rows[0]?.count ?? 0;
+}
+
+/**
  * Overi token, oznaci ho ako pouzity (jednorazovy) a vrati email, na ktory
  * bol vystaveny - alebo null, ak je neplatny/expirovany/uz pouzity.
  */

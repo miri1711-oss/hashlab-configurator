@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "crypto";
-import { createMagicLink } from "@/lib/db";
+import { createMagicLink, countRecentMagicLinks } from "@/lib/db";
 
 const LINK_VALID_MINUTES = 15;
+const RATE_LIMIT_WINDOW_MINUTES = 15;
+const RATE_LIMIT_MAX_REQUESTS = 3;
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,6 +15,17 @@ export async function POST(request: NextRequest) {
 
     if (!email || !email.includes("@")) {
       return NextResponse.json({ ok: false, error: "Zadajte platný email." }, { status: 400 });
+    }
+
+    const recentCount = await countRecentMagicLinks(email, RATE_LIMIT_WINDOW_MINUTES);
+    if (recentCount >= RATE_LIMIT_MAX_REQUESTS) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: `Príliš veľa žiadostí o prihlásenie. Skúste to prosím znova o ${RATE_LIMIT_WINDOW_MINUTES} minút.`,
+        },
+        { status: 429 }
+      );
     }
 
     const apiKey = process.env.RESEND_API_KEY;
