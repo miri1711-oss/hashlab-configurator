@@ -11,6 +11,10 @@ function escapeXml(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+function vertexKey(x: number, y: number, z: number, precision = 4): string {
+  return `${x.toFixed(precision)},${y.toFixed(precision)},${z.toFixed(precision)}`;
+}
+
 /**
  * Vytvori .3mf subor podla oficialnej 3MF specifikacie (Materials and
  * Properties Extension - <m:colorgroup>), ktoru Bambu Studio od verzie
@@ -35,21 +39,38 @@ export function buildColoredThreeMF(mesh: ColoredTriangleMesh): Blob {
     }
   }
 
-  const vertexLines: string[] = [];
+  // "Zlepenie" zhodnych vrcholov - vstupne data su "trojuholnikova polievka"
+  // (kazdy trojuholnik ma svoje vlastne 3 body, aj ked su na tom istom
+  // mieste ako body suseda). Na rozdiel od .stl formatu, ktory Bambu
+  // Studio pri nacitani automaticky "zlepi" sama, .3mf format ocakava, ze
+  // zdielane hrany uz odkazuju na ten isty index vrcholu - inak sa kazda
+  // hrana javi ako "otvorena" (chyba "N open edges").
+  const vertexIndexByKey = new Map<string, number>();
+  const weldedVertices: string[] = [];
   const triangleLines: string[] = [];
+
+  function weldVertex(x: number, y: number, z: number): number {
+    const key = vertexKey(x, y, z);
+    const existing = vertexIndexByKey.get(key);
+    if (existing !== undefined) return existing;
+    const index = weldedVertices.length;
+    weldedVertices.push(`<vertex x="${x}" y="${y}" z="${z}"/>`);
+    vertexIndexByKey.set(key, index);
+    return index;
+  }
 
   for (let t = 0; t < triangleCount; t++) {
     const base = t * 9; // 3 vrcholy * 3 suradnice
-    const v0 = t * 3;
+    const indices: number[] = [];
     for (let i = 0; i < 3; i++) {
       const x = positions[base + i * 3];
       const y = positions[base + i * 3 + 1];
       const z = positions[base + i * 3 + 2];
-      vertexLines.push(`<vertex x="${x}" y="${y}" z="${z}"/>`);
+      indices.push(weldVertex(x, y, z));
     }
     const colorIndex = colorIndexByHex.get(triangleColorsHex[t]) ?? 0;
     triangleLines.push(
-      `<triangle v1="${v0}" v2="${v0 + 1}" v3="${v0 + 2}" pid="1" p1="${colorIndex}"/>`
+      `<triangle v1="${indices[0]}" v2="${indices[1]}" v3="${indices[2]}" pid="1" p1="${colorIndex}"/>`
     );
   }
 
@@ -63,7 +84,7 @@ export function buildColoredThreeMF(mesh: ColoredTriangleMesh): Blob {
     <m:colorgroup id="1">${colorGroupLines}</m:colorgroup>
     <object id="2" type="model">
       <mesh>
-        <vertices>${vertexLines.join("")}</vertices>
+        <vertices>${weldedVertices.join("")}</vertices>
         <triangles>${triangleLines.join("")}</triangles>
       </mesh>
     </object>
