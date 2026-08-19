@@ -30,6 +30,10 @@ interface ModelViewerProps {
   onUndoPaint?: () => void;
   onResetPaint?: () => void;
   hasPaintedRegions?: boolean;
+  // Zakladna farba celeho modelu (nie stetec) - aby sa dala menit aj z
+  // celoobrazovkoveho nahladu, nielen z bocneho panelu.
+  colorId?: string;
+  onColorSelect?: (colorId: string) => void;
 }
 
 type ViewerTheme = "dark" | "light";
@@ -96,6 +100,8 @@ const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function Mod
     onUndoPaint,
     onResetPaint,
     hasPaintedRegions,
+    colorId,
+    onColorSelect,
   },
   forwardedRef
 ) {
@@ -394,6 +400,27 @@ const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function Mod
                     : "border-[var(--border)] bg-white/90 text-[var(--text-1)]"
                 }`}
               >
+                {onColorSelect && (
+                  <>
+                    <div className="flex items-center gap-1.5">
+                      <span className="mr-1 text-xs font-semibold">Farba modelu</span>
+                      {COLORS.map((color) => (
+                        <button
+                          key={color.id}
+                          type="button"
+                          title={color.label}
+                          onClick={() => onColorSelect(color.id)}
+                          className={`h-6 w-6 rounded-full border-2 transition-transform hover:scale-110 ${
+                            colorId === color.id ? "border-[var(--blue-2)]" : "border-transparent"
+                          }`}
+                          style={{ background: color.swatch }}
+                        />
+                      ))}
+                    </div>
+                    <span className={`h-5 w-px ${isDark ? "bg-white/20" : "bg-[var(--border)]"}`} />
+                  </>
+                )}
+
                 <label className="flex items-center gap-2 text-xs font-semibold">
                   <input
                     type="checkbox"
@@ -452,12 +479,18 @@ const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function Mod
               title="Odstrániť model"
               className={`absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-lg border backdrop-blur transition-colors ${
                 isDark
-                  ? "border-white/10 bg-white/10 text-white hover:bg-white/20"
-                  : "border-[var(--border)] bg-white/70 text-[var(--text-2)] hover:bg-white"
+                  ? "border-white/10 bg-white/10 text-white hover:bg-red-500/30"
+                  : "border-[var(--border)] bg-white/70 text-[var(--text-2)] hover:bg-red-50 hover:text-red-600"
               }`}
             >
               <svg width={14} height={14} viewBox="0 0 24 24" fill="none">
-                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" />
+                <path
+                  d="M4 7h16M9 7V4.5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1V7M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M10 11v6M14 11v6"
+                  stroke="currentColor"
+                  strokeWidth={1.6}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </button>
             <div className={`mono absolute bottom-3 left-3 z-10 rounded-lg border px-2.5 py-1 text-[11px] backdrop-blur ${badgeClass}`}>

@@ -157,10 +157,20 @@ const STLViewer = forwardRef<STLViewerHandle, STLViewerProps>(function STLViewer
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.dampingFactor = 0.08;
+    controls.dampingFactor = 0.1;
     controls.autoRotate = true;
     controls.autoRotateSpeed = 1.4;
+    controls.rotateSpeed = 1.15;
     controls.enablePan = false;
+
+    // Akonahle sa uzivatel prvykrat rucne dotkne modelu (rovnako ako v
+    // Bambu Studio), automaticke otacanie sa natrvalo vypne - dovtedy
+    // bezalo nepretrzite aj pocas rucneho otacania, co posobilo, akoby sa
+    // model "branil" rucnemu ovladaniu.
+    let userHasInteracted = false;
+    controls.addEventListener("start", () => {
+      userHasInteracted = true;
+    });
 
     function resize() {
       if (!container) return;
@@ -319,7 +329,7 @@ const STLViewer = forwardRef<STLViewerHandle, STLViewerProps>(function STLViewer
 
     function animate() {
       animationId = requestAnimationFrame(animate);
-      controls.autoRotate = !paintModeRef.current;
+      controls.autoRotate = !paintModeRef.current && !userHasInteracted;
       controls.update();
       renderer.render(scene, camera);
     }

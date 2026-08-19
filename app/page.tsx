@@ -148,6 +148,8 @@ export default function Home() {
                   onUndoPaint={handleUndoPaint}
                   onResetPaint={handleResetPaint}
                   hasPaintedRegions={hasPaintedRegions}
+                  colorId={state.colorId}
+                  onColorSelect={(colorId) => setState((prev) => ({ ...prev, colorId }))}
                 />
                 <InfoPanel dimensions={state.dimensions} fileName={state.fileName} />
               </section>
