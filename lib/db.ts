@@ -65,6 +65,61 @@ async function ensureOrdersTable() {
   tableEnsured = true;
 }
 
+let authTablesEnsured = false;
+
+async function ensureAuthTables() {
+  if (authTablesEnsured) return;
+  // Prihlasovacie odkazy poslane emailom zakaznikovi (magic link, bez hesla).
+  await sql`
+    CREATE TABLE IF NOT EXISTS magic_links (
+      token TEXT PRIMARY KEY,
+      email TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT now(),
+      expires_at TIMESTAMPTZ NOT NULL,
+      used BOOLEAN NOT NULL DEFAULT false
+    );
+  `;
+  authTablesEnsured = true;
+}
+
+export async function createMagicLink(token: string, email: string, expiresAt: Date) {
+  await ensureAuthTables();
+  await sql`
+    INSERT INTO magic_links (token, email, expires_at)
+    VALUES (${token}, ${email}, ${expiresAt.toISOString()});
+  `;
+}
+
+/**
+ * Overi token, oznaci ho ako pouzity (jednorazovy) a vrati email, na ktory
+ * bol vystaveny - alebo null, ak je neplatny/expirovany/uz pouzity.
+ */
+export async function consumeMagicLink(token: string): Promise<string | null> {
+  await ensureAuthTables();
+  const result = await sql`
+    UPDATE magic_links
+    SET used = true
+    WHERE token = ${token}
+      AND used = false
+      AND expires_at > now()
+    RETURNING email;
+  `;
+  return result.rows[0]?.email ?? null;
+}
+
+/**
+ * Objednavky konkretneho zakaznika podla emailu, na "Moje objednavky".
+ * Vyuziva uz existujuci stlpec email na objednavke - netreba samostatnu
+ * tabulku pouzivatelov ani prepajanie cudzim klucom.
+ */
+export async function listOrdersByEmail(email: string) {
+  await ensureOrdersTable();
+  const result = await sql`
+    SELECT * FROM orders WHERE email = ${email} ORDER BY created_at DESC LIMIT 100;
+  `;
+  return result.rows;
+}
+
 export async function insertOrder(order: OrderRecord) {
   await ensureOrdersTable();
   await sql`

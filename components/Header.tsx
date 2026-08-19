@@ -61,6 +61,12 @@ export default function Header({ step }: HeaderProps) {
           </div>
         ))}
         <a
+          href="/moje-objednavky"
+          className="rounded-lg border border-[var(--border)] px-2.5 py-1 text-[var(--text-3)] transition-colors hover:border-[var(--blue-2)] hover:text-[var(--text-1)] sm:px-3 sm:py-1.5"
+        >
+          Moje objednávky
+        </a>
+        <a
           href="/faq"
           className="rounded-lg border border-[var(--border)] px-2.5 py-1 text-[var(--text-3)] transition-colors hover:border-[var(--blue-2)] hover:text-[var(--text-1)] sm:px-3 sm:py-1.5"
         >
