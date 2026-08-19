@@ -225,7 +225,7 @@ const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function Mod
           )}
         </button>
 
-        {loaded && isViewable && (
+        {(isFullscreen || (loaded && isViewable)) && (
           <button
             type="button"
             onClick={() => setIsFullscreen((v) => !v)}
@@ -308,16 +308,32 @@ const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function Mod
                 if (selected) onFileSelected(selected);
               }}
             />
-            <a
-              href="https://www.justfixstl.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`mt-4 text-[11px] underline-offset-2 hover:underline ${
+            <div
+              className={`mt-4 flex flex-col items-center gap-1 text-[11px] ${
                 isDark ? "text-slate-400" : "text-[var(--text-3)]"
               }`}
             >
-              Model sa nedá nahrať alebo je poškodený? Opravte si ho tu (zdarma, súbor sa nikam neposiela)
-            </a>
+              <span>Model sa nedá nahrať alebo je poškodený? Skúste ho opraviť:</span>
+              <span className="flex items-center gap-3">
+                <a
+                  href="https://www.justfixstl.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline-offset-2 hover:underline"
+                >
+                  JustFixSTL (zdarma, súbor sa nikam neposiela)
+                </a>
+                <span>·</span>
+                <a
+                  href="https://www.formware.co/onlinestlrepair"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline-offset-2 hover:underline"
+                >
+                  Formware (záložná možnosť)
+                </a>
+              </span>
+            </div>
           </div>
         )}
 

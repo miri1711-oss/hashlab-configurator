@@ -17,7 +17,7 @@ const FAQ_ITEMS: FaqItem[] = [
   {
     question: "Môj model sa nedá nahrať / appka hlási chybu - čo teraz?",
     answer:
-      "Niekedy má súbor poškodenú geometriu (napr. diery v povrchu). Priamo pri nahrávaní modelu nájdete odkaz na bezplatný nástroj JustFixSTL, ktorý model opraví - a keďže funguje priamo vo vašom prehliadači, súbor sa nikam neposiela.",
+      "Niekedy má súbor poškodenú geometriu (napr. diery v povrchu). Priamo pri nahrávaní modelu nájdete odkazy na bezplatné nástroje na opravu (JustFixSTL a Formware) - JustFixSTL funguje priamo vo vašom prehliadači, súbor sa nikam neposiela.",
   },
   {
     question: "Aké materiály ponúkate a na čo sa hodia?",
