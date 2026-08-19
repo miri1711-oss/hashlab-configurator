@@ -25,6 +25,7 @@ export interface OrderSummaryData {
 
 interface CheckoutFlowProps {
   file: File | null;
+  paintPreviewDataUrl?: string | null;
   summary: OrderSummaryData;
   onBack: () => void;
   onStartOver: () => void;
@@ -39,7 +40,13 @@ const EMPTY_DETAILS: CustomerDetails = {
   zip: "",
 };
 
-export default function CheckoutFlow({ file, summary, onBack, onStartOver }: CheckoutFlowProps) {
+export default function CheckoutFlow({
+  file,
+  paintPreviewDataUrl,
+  summary,
+  onBack,
+  onStartOver,
+}: CheckoutFlowProps) {
   const [details, setDetails] = useState<CustomerDetails>(EMPTY_DETAILS);
   const [shipping, setShipping] = useState<ShippingMethod>("courier");
   const [payment, setPayment] = useState<PaymentMethod>("card");
@@ -143,6 +150,29 @@ export default function CheckoutFlow({ file, summary, onBack, onStartOver }: Che
       }
     }
 
+    // Ak zákazník použil viacfarebné maľovanie, nahráme aj snímku toho, ako
+    // má model vyzerať - STL/OBJ formát farby neuchováva, takže bez tohto
+    // by obsluha pri tlačiarni nevedela, ktoré časti majú byť aké farby.
+    let paintPreviewUrl: string | null = null;
+    if (paintPreviewDataUrl) {
+      try {
+        const blob = await (await fetch(paintPreviewDataUrl)).blob();
+        const previewForm = new FormData();
+        previewForm.append("file", blob, `${newOrderNumber}-farby.png`);
+        const previewUploadResponse = await fetch("/api/upload-stl", {
+          method: "POST",
+          body: previewForm,
+        });
+        const previewUploadData = await previewUploadResponse.json();
+        if (previewUploadResponse.ok && previewUploadData.url) {
+          paintPreviewUrl = previewUploadData.url;
+        }
+      } catch {
+        // Nepodarilo sa nahrať snímku farieb - objednávka sa aj tak uloží,
+        // len bez tejto vizuálnej pomôcky pre obsluhu.
+      }
+    }
+
     const orderPayload = {
       orderNumber: newOrderNumber,
       fullName: details.fullName,
@@ -156,6 +186,7 @@ export default function CheckoutFlow({ file, summary, onBack, onStartOver }: Che
       paymentMethod: payment,
       fileName: summary.fileName,
       modelFileUrl,
+      paintPreviewUrl,
       materialName: summary.materialName,
       colorLabel: summary.colorLabel,
       hasCustomPaint: Boolean(summary.hasCustomPaint),

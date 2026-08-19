@@ -90,6 +90,18 @@ def download_stl(order: dict) -> Path:
 
     model_url = order["model_file_url"]
     urllib.request.urlretrieve(model_url, local_path)
+
+    # Ak zakaznik pouzil viacfarebne malovanie, stiahni aj obrazok toho, ako
+    # ma model presne vyzerat (STL/OBJ format farby neuchovava) - ulozi sa
+    # vedla STL suboru pod rovnakym menom, aby sa dali lahko najst spolu.
+    paint_preview_url = order.get("paint_preview_url")
+    if paint_preview_url:
+        preview_path = local_path.with_name(local_path.stem + "_FARBY.png")
+        try:
+            urllib.request.urlretrieve(paint_preview_url, preview_path)
+        except Exception as exc:  # noqa: BLE001
+            print(f"[objednavky] UPOZORNENIE: nepodarilo sa stiahnut obrazok farieb pre {order_id}: {exc}")
+
     return local_path
 
 
@@ -100,7 +112,7 @@ def open_in_bambu_studio(stl_path: Path) -> None:
     klikne Slice a Print - appka (naziva pripojena k tlaciarni) sama
     zabezpeci spravny vyber materialu z AMS.
     """
-    subprocess.run(["open", "-n", "-a", "/Applications/BambuStudio.app", str(stl_path)], check=True)
+    subprocess.run(["open", "-a", BAMBU_STUDIO_APP_NAME, str(stl_path)], check=True)
 
 
 def process_order_queue() -> None:
@@ -120,6 +132,12 @@ def process_order_queue() -> None:
                 f"vyska vrstvy: {order.get('layer_height_label', '0.2 mm')}  |  "
                 f"kusy: {order.get('quantity')}"
             )
+            if order.get("paint_preview_url"):
+                preview_name = local_path.stem + "_FARBY.png"
+                print(
+                    f"    !! VIACFAREBNY MODEL - pozri obrazok {preview_name} pred "
+                    f"tym, nez namalujes farby v Bambu Studio"
+                )
             open_in_bambu_studio(local_path)
             print(f"[bambu] Otvorene v Bambu Studio -> {local_path.name}")
             print("[bambu] Teraz uz len: nastav material/farbu/vyplnu, Slice, Print.")

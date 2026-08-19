@@ -1,9 +1,13 @@
 "use client";
 
-import { DragEvent, useEffect, useMemo, useRef, useState } from "react";
-import STLViewer from "./STLViewer";
+import { DragEvent, forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+import STLViewer, { STLViewerHandle } from "./STLViewer";
 import { ModelDimensions } from "@/lib/types";
 import { COLORS } from "@/lib/constants";
+
+export interface ModelViewerHandle {
+  captureSnapshot: () => string | null;
+}
 
 interface ModelViewerProps {
   file: File | null;
@@ -72,28 +76,36 @@ const FLOATING_ICONS: { style: React.CSSProperties; d?: string; extra?: JSX.Elem
   { style: { right: "44%", top: "8%", width: 30, height: 30 }, d: "M12 32l20-20 20 20-20 20-20-20Z" },
 ];
 
-export default function ModelViewer({
-  file,
-  colorHex,
-  paintMode,
-  paintColorHex,
-  resetPaintSignal,
-  undoPaintSignal,
-  onFileSelected,
-  onRemove,
-  onDimensions,
-  onPreviewError,
-  onPaintApplied,
-  paintColorId,
-  onPaintColorSelect,
-  onTogglePaintMode,
-  onUndoPaint,
-  onResetPaint,
-  hasPaintedRegions,
-}: ModelViewerProps) {
+const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function ModelViewer(
+  {
+    file,
+    colorHex,
+    paintMode,
+    paintColorHex,
+    resetPaintSignal,
+    undoPaintSignal,
+    onFileSelected,
+    onRemove,
+    onDimensions,
+    onPreviewError,
+    onPaintApplied,
+    paintColorId,
+    onPaintColorSelect,
+    onTogglePaintMode,
+    onUndoPaint,
+    onResetPaint,
+    hasPaintedRegions,
+  },
+  forwardedRef
+) {
+  const stlViewerRef = useRef<STLViewerHandle>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
   const [theme, setTheme] = useState<ViewerTheme>("dark");
+
+  useImperativeHandle(forwardedRef, () => ({
+    captureSnapshot: () => stlViewerRef.current?.captureSnapshot() ?? null,
+  }));
   const [isFullscreen, setIsFullscreen] = useState(false);
   const loaded = Boolean(file);
 
@@ -305,6 +317,7 @@ export default function ModelViewer({
           <div className="animate-fade-in absolute inset-0 flex items-center justify-center">
             {isViewable ? (
               <STLViewer
+                ref={stlViewerRef}
                 file={file}
                 colorHex={colorHex}
                 paintMode={paintMode}
@@ -453,4 +466,6 @@ export default function ModelViewer({
       </div>
     </div>
   );
-}
+});
+
+export default ModelViewer;

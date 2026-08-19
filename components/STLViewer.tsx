@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import * as THREE from "three";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
@@ -22,20 +22,31 @@ interface STLViewerProps {
   onPaintApplied?: () => void;
 }
 
+export interface STLViewerHandle {
+  /** Vrati aktualny obraz 3D nahladu (vratane namalovanych farieb) ako PNG data URL, alebo null ak nie je este pripraveny. */
+  captureSnapshot: () => string | null;
+}
+
 const CLICK_MOVE_THRESHOLD_PX = 6;
 
-export default function STLViewer({
-  file,
-  colorHex,
-  paintMode,
-  paintColorHex,
-  resetPaintSignal,
-  undoPaintSignal,
-  onDimensions,
-  onError,
-  onPaintApplied,
-}: STLViewerProps) {
+const STLViewer = forwardRef<STLViewerHandle, STLViewerProps>(function STLViewer(
+  {
+    file,
+    colorHex,
+    paintMode,
+    paintColorHex,
+    resetPaintSignal,
+    undoPaintSignal,
+    onDimensions,
+    onError,
+    onPaintApplied,
+  },
+  forwardedRef
+) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const sceneRef = useRef<THREE.Scene | null>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const colorAttrRef = useRef<THREE.BufferAttribute | null>(null);
   const triangleOverridesRef = useRef<Map<number, THREE.Color>>(new Map());
   // História kliknutí pri maľovaní - každý záznam si pamätá, akú farbu mali
@@ -46,6 +57,19 @@ export default function STLViewer({
   const paintColorRef = useRef(new THREE.Color(paintColorHex));
   const paintModeRef = useRef(paintMode);
   const rebuildColorsRef = useRef<() => void>(() => {});
+
+  useImperativeHandle(forwardedRef, () => ({
+    captureSnapshot: () => {
+      const renderer = rendererRef.current;
+      const scene = sceneRef.current;
+      const camera = cameraRef.current;
+      if (!renderer || !scene || !camera) return null;
+      // Vynutene prekreslenie tesne pred zachytenim, nech mame isto
+      // najaktualnejsi obraz (vratane prave namalovanych farieb).
+      renderer.render(scene, camera);
+      return renderer.domElement.toDataURL("image/png");
+    },
+  }));
 
   useEffect(() => {
     baseColorRef.current.setHex(colorHex);
@@ -92,9 +116,16 @@ export default function STLViewer({
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 10000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      preserveDrawingBuffer: true,
+    });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     container.appendChild(renderer.domElement);
+    rendererRef.current = renderer;
+    sceneRef.current = scene;
+    cameraRef.current = camera;
 
     scene.add(new THREE.AmbientLight(0x9fc9ff, 0.75));
     const keyLight = new THREE.DirectionalLight(0xffffff, 1.1);
@@ -283,6 +314,9 @@ export default function STLViewer({
       renderer.domElement.removeEventListener("pointerup", handlePointerUp);
       controls.dispose();
       renderer.dispose();
+      rendererRef.current = null;
+      sceneRef.current = null;
+      cameraRef.current = null;
       if (mesh) {
         mesh.geometry.dispose();
         (mesh.material as THREE.Material).dispose();
@@ -302,4 +336,6 @@ export default function STLViewer({
       className={`absolute inset-0 ${paintMode ? "cursor-crosshair" : ""}`}
     />
   );
-}
+});
+
+export default STLViewer;

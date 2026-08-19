@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import BackgroundDecoration from "@/components/BackgroundDecoration";
 import Header from "@/components/Header";
-import ModelViewer from "@/components/ModelViewer";
+import ModelViewer, { ModelViewerHandle } from "@/components/ModelViewer";
 import InfoPanel from "@/components/InfoPanel";
 import MaterialPanel from "@/components/MaterialPanel";
 import ColorPanel from "@/components/ColorPanel";
@@ -38,6 +38,8 @@ export default function Home() {
   const [paintResetSignal, setPaintResetSignal] = useState(0);
   const [paintUndoSignal, setPaintUndoSignal] = useState(0);
   const [hasPaintedRegions, setHasPaintedRegions] = useState(false);
+  const [paintPreviewDataUrl, setPaintPreviewDataUrl] = useState<string | null>(null);
+  const modelViewerRef = useRef<ModelViewerHandle>(null);
 
   const material = MATERIALS.find((m) => m.id === state.materialId)!;
   const infill = INFILL_OPTIONS.find((i) => i.id === state.infillId)!;
@@ -93,6 +95,12 @@ export default function Home() {
 
   function handleCheckout() {
     if (!state.dimensions) return;
+    if (hasPaintedRegions) {
+      const snapshot = modelViewerRef.current?.captureSnapshot() ?? null;
+      setPaintPreviewDataUrl(snapshot);
+    } else {
+      setPaintPreviewDataUrl(null);
+    }
     setState((prev) => ({ ...prev, step: 3 }));
   }
 
@@ -118,6 +126,7 @@ export default function Home() {
             <main className="grid grid-cols-1 gap-6 py-6 lg:grid-cols-5">
               <section className="flex flex-col gap-4 lg:col-span-3">
                 <ModelViewer
+                  ref={modelViewerRef}
                   file={uploadedFile}
                   colorHex={COLOR_HEX[state.colorId] ?? 0x2563eb}
                   paintMode={paintModeEnabled}
@@ -183,6 +192,7 @@ export default function Home() {
         ) : (
           <CheckoutFlow
             file={uploadedFile}
+            paintPreviewDataUrl={paintPreviewDataUrl}
             summary={{
               fileName: state.fileName ?? "—",
               materialName: material.name,

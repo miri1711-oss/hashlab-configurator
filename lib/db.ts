@@ -13,6 +13,7 @@ export interface OrderRecord {
   paymentMethod: string;
   fileName: string;
   modelFileUrl: string | null;
+  paintPreviewUrl: string | null;
   materialName: string;
   colorLabel: string;
   hasCustomPaint: boolean;
@@ -62,6 +63,7 @@ async function ensureOrdersTable() {
   // a spustil tlac.
   await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS print_status TEXT NOT NULL DEFAULT 'pending';`;
   await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS layer_height_label TEXT NOT NULL DEFAULT '0.2 mm';`;
+  await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS paint_preview_url TEXT;`;
   tableEnsured = true;
 }
 
@@ -142,13 +144,13 @@ export async function insertOrder(order: OrderRecord) {
     INSERT INTO orders (
       id, full_name, email, phone, street, city, zip,
       shipping_method, packeta_point_name, payment_method,
-      file_name, model_file_url, material_name, color_label, has_custom_paint,
+      file_name, model_file_url, paint_preview_url, material_name, color_label, has_custom_paint,
       infill_label, layer_height_label, quantity, total_price, status
     ) VALUES (
       ${order.id}, ${order.fullName}, ${order.email}, ${order.phone},
       ${order.street}, ${order.city}, ${order.zip},
       ${order.shippingMethod}, ${order.packetaPointName}, ${order.paymentMethod},
-      ${order.fileName}, ${order.modelFileUrl}, ${order.materialName}, ${order.colorLabel}, ${order.hasCustomPaint},
+      ${order.fileName}, ${order.modelFileUrl}, ${order.paintPreviewUrl}, ${order.materialName}, ${order.colorLabel}, ${order.hasCustomPaint},
       ${order.infillLabel}, ${order.layerHeightLabel}, ${order.quantity}, ${order.totalPrice}, ${order.status}
     )
     ON CONFLICT (id) DO NOTHING;

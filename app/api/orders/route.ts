@@ -31,6 +31,7 @@ export async function POST(request: NextRequest) {
       paymentMethod,
       fileName: String(body.fileName ?? ""),
       modelFileUrl: body.modelFileUrl ? String(body.modelFileUrl) : null,
+      paintPreviewUrl: body.paintPreviewUrl ? String(body.paintPreviewUrl) : null,
       materialName,
       colorLabel,
       hasCustomPaint: Boolean(body.hasCustomPaint),
@@ -41,6 +42,9 @@ export async function POST(request: NextRequest) {
       status: paymentMethod === "card" ? "pending_payment" : "cod",
     });
 
+    // Pri dobierke je objednávka rovno potvrdená (netreba čakať na platbu
+    // kartou) - potvrdenie emailom môže ísť hneď. Pri platbe kartou sa
+    // pošle až po potvrdení od Stripe (viď stripe-webhook route).
     if (paymentMethod !== "card") {
       await sendOrderConfirmationEmail({
         id: orderId,
@@ -63,6 +67,8 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// Jednoduchý prehľad objednávok - chránený tajným kľúčom v query parametri
+// (?key=...), keďže projekt zatiaľ nemá skutočné prihlasovanie pre admina.
 export async function GET(request: NextRequest) {
   const key = request.nextUrl.searchParams.get("key");
   if (!process.env.ORDERS_VIEW_KEY || key !== process.env.ORDERS_VIEW_KEY) {
