@@ -66,6 +66,7 @@ async function ensureOrdersTable() {
   await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS layer_height_label TEXT NOT NULL DEFAULT '0.2 mm';`;
   await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS paint_preview_url TEXT;`;
   await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS colored_threemf_url TEXT;`;
+  await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS packeta_barcode TEXT;`;
   tableEnsured = true;
 }
 
@@ -167,6 +168,11 @@ export async function updateOrderStatus(id: string, status: string) {
 export async function updatePrintStatus(id: string, printStatus: string) {
   await ensureOrdersTable();
   await sql`UPDATE orders SET print_status = ${printStatus} WHERE id = ${id};`;
+}
+
+export async function updatePacketaBarcode(id: string, barcode: string) {
+  await ensureOrdersTable();
+  await sql`UPDATE orders SET packeta_barcode = ${barcode} WHERE id = ${id};`;
 }
 
 export async function listOrders() {

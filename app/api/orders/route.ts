@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { insertOrder, listOrders } from "@/lib/db";
+import { insertOrder, listOrders, updatePacketaBarcode } from "@/lib/db";
 import { sendOrderConfirmationEmail } from "@/lib/email";
+import { createPacketaHomeDeliveryShipment } from "@/lib/packeta";
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,16 +17,20 @@ export async function POST(request: NextRequest) {
     const totalPrice = Number(body.totalPrice ?? 0);
     const email = String(body.email ?? "");
     const fullName = String(body.fullName ?? "");
+    const phone = String(body.phone ?? "");
+    const street = String(body.street ?? "");
+    const city = String(body.city ?? "");
+    const zip = String(body.zip ?? "");
     const shippingMethod = String(body.shippingMethod ?? "");
 
     await insertOrder({
       id: orderId,
       fullName,
       email,
-      phone: String(body.phone ?? ""),
-      street: String(body.street ?? ""),
-      city: String(body.city ?? ""),
-      zip: String(body.zip ?? ""),
+      phone,
+      street,
+      city,
+      zip,
       shippingMethod,
       packetaPointName: body.packetaPointName ? String(body.packetaPointName) : null,
       paymentMethod,
@@ -59,6 +64,27 @@ export async function POST(request: NextRequest) {
         totalPrice,
         shippingMethod,
       });
+
+      // Pri "Packeta domov" a dobierke sa da zasielka vytvorit hned, rovnakym
+      // dovodom ako email - objednavka je uz potvrdena, netreba cakat na nic.
+      if (shippingMethod === "packeta_domov") {
+        const shipmentResult = await createPacketaHomeDeliveryShipment({
+          orderNumber: orderId,
+          fullName,
+          email,
+          phone,
+          street,
+          city,
+          zip,
+          totalPriceEur: totalPrice,
+          codAmountEur: paymentMethod === "cod" ? totalPrice : null,
+        });
+        if (shipmentResult.ok && shipmentResult.barcode) {
+          await updatePacketaBarcode(orderId, shipmentResult.barcode);
+        } else {
+          console.error(`Packeta zasielka pre objednavku ${orderId} sa nepodarila:`, shipmentResult.error);
+        }
+      }
     }
 
     return NextResponse.json({ ok: true });

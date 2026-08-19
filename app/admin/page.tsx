@@ -11,6 +11,13 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   paid: { label: "Zaplatené", color: "bg-emerald-50 text-emerald-700" },
 };
 
+const SHIPPING_LABELS: Record<string, string> = {
+  courier: "Kuriér",
+  packeta: "Výdajné miesto",
+  packeta_domov: "Packeta domov",
+  pickup: "Osobný odber",
+};
+
 export default async function AdminPage() {
   const token = cookies().get(SESSION_COOKIE_NAME)?.value;
   const session = verifySessionToken(token);
@@ -41,6 +48,7 @@ export default async function AdminPage() {
                 <th className="px-4 py-3">Materiál / farba</th>
                 <th className="px-4 py-3">Cena</th>
                 <th className="px-4 py-3">Platba</th>
+                <th className="px-4 py-3">Doprava</th>
                 <th className="px-4 py-3">Tlač</th>
                 <th className="px-4 py-3">Dátum</th>
               </tr>
@@ -70,6 +78,18 @@ export default async function AdminPage() {
                       <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${status.color}`}>
                         {status.label}
                       </span>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-[var(--text-3)]">
+                      <div>
+                        {SHIPPING_LABELS[order.shipping_method as string] ?? (order.shipping_method as string)}
+                      </div>
+                      {order.packeta_barcode ? (
+                        <div className="mono mt-0.5 text-[var(--text-1)]">
+                          {order.packeta_barcode as string}
+                        </div>
+                      ) : order.shipping_method === "packeta_domov" ? (
+                        <div className="mt-0.5 text-amber-600">zásielka sa nevytvorila</div>
+                      ) : null}
                     </td>
                     <td className="px-4 py-3">
                       <PrintStatusButton

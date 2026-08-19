@@ -45,6 +45,16 @@ Vlastné hodnoty, žiadna externá registrácia netreba:
                        cookies, nikdy ho nikomu neposielaj)
 - ADMIN_PASSWORD     (heslo pre /admin - vlastné, zmeniteľné kedykoľvek)
 
+## 8. Packeta domov - skutočné vytváranie zásielok (doručenie na adresu) - NOVÉ
+Z client.packeta.com (rovnaký účet ako Packeta widget):
+- PACKETA_API_PASSWORD     (pole "API heslo" v klientskej sekcii - NIE "API
+                             kľúč", to je iné pole na iný účel)
+- PACKETA_HOME_CARRIER_ID  (číslo dopravcu pre "Packeta domov" - nájdeš ho
+                             vo svojom Packeta účte v nastavení
+                             dopravcov/prepravcov, alebo sa spýtaj ich
+                             podpory - DÔLEŽITÉ: bez správneho čísla by sa
+                             vytvorila zásielka pre nesprávneho dopravcu)
+
 ---
 
 ## Zhrnutie - čo treba ručne zadať (nie je automatické)

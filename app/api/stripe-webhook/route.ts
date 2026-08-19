@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { getOrderById, updateOrderStatus } from "@/lib/db";
+import { getOrderById, updateOrderStatus, updatePacketaBarcode } from "@/lib/db";
 import { sendOrderConfirmationEmail } from "@/lib/email";
+import { createPacketaHomeDeliveryShipment } from "@/lib/packeta";
 
 export async function POST(request: NextRequest) {
   if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET) {
@@ -40,6 +41,28 @@ export async function POST(request: NextRequest) {
             totalPrice: Number(order.total_price),
             shippingMethod: order.shipping_method,
           });
+
+          // Platba kartou je uz potvrdena Stripe - az teraz je bezpecne
+          // vytvorit skutocnu zasielku (predtym by sa mohlo stat, ze
+          // objednavka je len "pending_payment" a platba nikdy neprejde).
+          if (order.shipping_method === "packeta_domov") {
+            const shipmentResult = await createPacketaHomeDeliveryShipment({
+              orderNumber: order.id,
+              fullName: order.full_name,
+              email: order.email,
+              phone: order.phone,
+              street: order.street,
+              city: order.city,
+              zip: order.zip,
+              totalPriceEur: Number(order.total_price),
+              codAmountEur: null, // platba kartou uz prebehla, ziadna dobierka
+            });
+            if (shipmentResult.ok && shipmentResult.barcode) {
+              await updatePacketaBarcode(order.id, shipmentResult.barcode);
+            } else {
+              console.error(`Packeta zasielka pre objednavku ${order.id} sa nepodarila:`, shipmentResult.error);
+            }
+          }
         }
       } catch (error) {
         console.error("Nepodarilo sa označiť objednávku ako zaplatenú:", error);

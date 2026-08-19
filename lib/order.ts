@@ -7,7 +7,7 @@ export interface CustomerDetails {
   zip: string;
 }
 
-export type ShippingMethod = "courier" | "packeta" | "pickup";
+export type ShippingMethod = "courier" | "packeta" | "packeta_domov" | "pickup";
 export type PaymentMethod = "card" | "cod";
 
 export interface ShippingOption {
@@ -30,6 +30,12 @@ export const SHIPPING_OPTIONS: ShippingOption[] = [
     label: "Výdajné miesto (Packeta)",
     description: "Zvoľte si výdajné miesto Packeta/Zásielkovňa",
     price: 3.5,
+  },
+  {
+    id: "packeta_domov",
+    label: "Packeta domov",
+    description: "Doručenie na adresu cez Packetu, do druhého dňa",
+    price: 3.9,
   },
   { id: "pickup", label: "Osobný odber", description: "hashlab.sk, Spišská Nová Ves", price: 0 },
 ];
