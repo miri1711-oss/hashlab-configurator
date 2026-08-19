@@ -175,6 +175,63 @@ export async function updatePacketaBarcode(id: string, barcode: string) {
   await sql`UPDATE orders SET packeta_barcode = ${barcode} WHERE id = ${id};`;
 }
 
+let printerStatusTableEnsured = false;
+
+async function ensurePrinterStatusTable() {
+  if (printerStatusTableEnsured) return;
+  // Jeden riadok = jedna tlaciaren. "id" je vlastny nazov tlaciarne
+  // (napr. "hlavna"), aby sa dala neskor jednoducho pridat druha.
+  await sql`
+    CREATE TABLE IF NOT EXISTS printer_status (
+      id TEXT PRIMARY KEY,
+      is_printing BOOLEAN NOT NULL DEFAULT false,
+      current_job_name TEXT,
+      progress_percent INTEGER,
+      ams_slots_json TEXT,
+      updated_at TIMESTAMPTZ DEFAULT now()
+    );
+  `;
+  printerStatusTableEnsured = true;
+}
+
+export interface AmsSlot {
+  slot: number;
+  materialType: string; // napr. "PLA", "PETG"
+  colorHex: string; // napr. "#FF0000"
+  remainingPercent: number | null;
+}
+
+export interface PrinterStatusUpdate {
+  printerId: string;
+  isPrinting: boolean;
+  currentJobName: string | null;
+  progressPercent: number | null;
+  amsSlots: AmsSlot[];
+}
+
+export async function upsertPrinterStatus(status: PrinterStatusUpdate) {
+  await ensurePrinterStatusTable();
+  await sql`
+    INSERT INTO printer_status (id, is_printing, current_job_name, progress_percent, ams_slots_json, updated_at)
+    VALUES (
+      ${status.printerId}, ${status.isPrinting}, ${status.currentJobName},
+      ${status.progressPercent}, ${JSON.stringify(status.amsSlots)}, now()
+    )
+    ON CONFLICT (id) DO UPDATE SET
+      is_printing = EXCLUDED.is_printing,
+      current_job_name = EXCLUDED.current_job_name,
+      progress_percent = EXCLUDED.progress_percent,
+      ams_slots_json = EXCLUDED.ams_slots_json,
+      updated_at = now();
+  `;
+}
+
+export async function listPrinterStatuses() {
+  await ensurePrinterStatusTable();
+  const result = await sql`SELECT * FROM printer_status ORDER BY id;`;
+  return result.rows;
+}
+
 export async function listOrders() {
   await ensureOrdersTable();
   const result = await sql`SELECT * FROM orders ORDER BY created_at DESC LIMIT 200;`;

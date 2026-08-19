@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import BackgroundDecoration from "@/components/BackgroundDecoration";
 import Header from "@/components/Header";
 import ModelViewer, { ModelViewerHandle } from "@/components/ModelViewer";
+import PrinterStatusBadge from "@/components/PrinterStatusBadge";
 import InfoPanel from "@/components/InfoPanel";
 import MaterialPanel from "@/components/MaterialPanel";
 import ColorPanel from "@/components/ColorPanel";
@@ -124,6 +125,12 @@ export default function Home() {
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <Header step={state.step} />
+
+        {state.step < 3 && (
+          <div className="pt-4">
+            <PrinterStatusBadge />
+          </div>
+        )}
 
         {state.step < 3 ? (
           <>

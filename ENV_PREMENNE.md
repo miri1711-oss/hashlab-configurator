@@ -77,7 +77,11 @@ Tento skript beží mimo Vercelu, priamo na počítači pri tlačiarni.
 Používa vlastné premenné (nastavujú sa cez `export` v termináli
 alebo priamo v súbore):
 - HASHLAB_ORDERS_KEY    (rovnaká hodnota ako ORDERS_VIEW_KEY vo Verceli)
-- PRINTER_IP
-- PRINTER_ACCESS_CODE
-- PRINTER_SERIAL
+- PRINTER_IP            (NOVÉ - teraz sa reálne používa aj na živý stav
+                          tlačiarne pre zákazníkov, nie len na názov v
+                          poznámkach)
+- PRINTER_ACCESS_CODE   (NOVÉ - použité rovnako)
+- PRINTER_SERIAL        (NOVÉ - použité rovnako)
 - BAMBU_STUDIO_APP_NAME (voliteľné, predvolené "Bambu Studio")
+
+Vyžaduje aj knižnicu: `pip install paho-mqtt`
