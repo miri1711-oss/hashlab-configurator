@@ -62,19 +62,19 @@ export default function Header({ step }: HeaderProps) {
         ))}
         <a
           href="/moje-objednavky"
-          className="rounded-lg border border-[var(--border)] px-2.5 py-1 text-[var(--text-3)] transition-colors hover:border-[var(--blue-2)] hover:text-[var(--text-1)] sm:px-3 sm:py-1.5"
+          className="btn-gradient rounded-full px-3 py-1.5 text-white"
         >
           Moje objednávky
         </a>
         <a
           href="/faq"
-          className="rounded-lg border border-[var(--border)] px-2.5 py-1 text-[var(--text-3)] transition-colors hover:border-[var(--blue-2)] hover:text-[var(--text-1)] sm:px-3 sm:py-1.5"
+          className="btn-gradient rounded-full px-3 py-1.5 text-white"
         >
           FAQ
         </a>
         <a
           href="/kontakt"
-          className="rounded-lg border border-[var(--border)] px-2.5 py-1 text-[var(--text-3)] transition-colors hover:border-[var(--blue-2)] hover:text-[var(--text-1)] sm:px-3 sm:py-1.5"
+          className="btn-gradient rounded-full px-3 py-1.5 text-white"
         >
           Kontakt
         </a>
