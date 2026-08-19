@@ -85,15 +85,25 @@ def download_stl(order: dict) -> Path:
     quantity = order.get("quantity", 1)
     paint_note = "-viacfarebny" if order.get("has_custom_paint") else ""
 
-    local_filename = f"{order_id}_{material}_{color}_{infill}_{quantity}ks{paint_note}.stl"
-    local_path = OUTPUT_DIR / local_filename
+    # Ak zakaznik pouzil viacfarebne malovanie a mame k dispozicii hotovy
+    # farebny .3mf subor (Standard 3MF, oficialny format), pouzijeme
+    # PREDNOSTNE ten - Bambu Studio ho otvori uz vyfarbeny, netreba
+    # domalovat rucne. Ak z nejakeho dovodu nie je k dispozicii, padneme
+    # spat na obycajny STL (bez farieb, treba domalovat podla obrazku).
+    colored_threemf_url = order.get("colored_threemf_url")
+    if colored_threemf_url:
+        local_filename = f"{order_id}_{material}_{color}_{infill}_{quantity}ks{paint_note}.3mf"
+        local_path = OUTPUT_DIR / local_filename
+        urllib.request.urlretrieve(colored_threemf_url, local_path)
+    else:
+        local_filename = f"{order_id}_{material}_{color}_{infill}_{quantity}ks{paint_note}.stl"
+        local_path = OUTPUT_DIR / local_filename
+        model_url = order["model_file_url"]
+        urllib.request.urlretrieve(model_url, local_path)
 
-    model_url = order["model_file_url"]
-    urllib.request.urlretrieve(model_url, local_path)
-
-    # Ak zakaznik pouzil viacfarebne malovanie, stiahni aj obrazok toho, ako
-    # ma model presne vyzerat (STL/OBJ format farby neuchovava) - ulozi sa
-    # vedla STL suboru pod rovnakym menom, aby sa dali lahko najst spolu.
+    # Obrazok toho, ako ma byt model vyfarbeny, stiahneme VZDY, ked bolo
+    # pouzite malovanie - aj ked mame uz vyfarbeny .3mf, sluzi ako zaloha
+    # pre pripad, ze by sa .3mf v Bambu Studio otvoril nespravne.
     paint_preview_url = order.get("paint_preview_url")
     if paint_preview_url:
         preview_path = local_path.with_name(local_path.stem + "_FARBY.png")
@@ -135,11 +145,16 @@ def process_order_queue() -> None:
                 f"vyska vrstvy: {order.get('layer_height_label', '0.2 mm')}  |  "
                 f"kusy: {order.get('quantity')}"
             )
-            if order.get("paint_preview_url"):
+            if order.get("colored_threemf_url"):
+                print(
+                    f"    ✓ FAREBNY .3MF - model by sa mal otvorit uz vyfarbeny "
+                    f"(over si to, obrazok je zaloha ak by farby nesedeli)"
+                )
+            elif order.get("paint_preview_url"):
                 preview_name = local_path.stem + "_FARBY.png"
                 print(
-                    f"    !! VIACFAREBNY MODEL - pozri obrazok {preview_name} pred "
-                    f"tym, nez namalujes farby v Bambu Studio"
+                    f"    !! VIACFAREBNY MODEL (bez hotoveho 3mf) - pozri obrazok "
+                    f"{preview_name} a domaluj farby rucne v Bambu Studio"
                 )
             open_in_bambu_studio(local_path)
             print(f"[bambu] Otvorene v Bambu Studio -> {local_path.name}")

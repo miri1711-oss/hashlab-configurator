@@ -39,6 +39,7 @@ export default function Home() {
   const [paintUndoSignal, setPaintUndoSignal] = useState(0);
   const [hasPaintedRegions, setHasPaintedRegions] = useState(false);
   const [paintPreviewDataUrl, setPaintPreviewDataUrl] = useState<string | null>(null);
+  const [coloredThreeMFBlob, setColoredThreeMFBlob] = useState<Blob | null>(null);
   const modelViewerRef = useRef<ModelViewerHandle>(null);
 
   const material = MATERIALS.find((m) => m.id === state.materialId)!;
@@ -98,8 +99,11 @@ export default function Home() {
     if (hasPaintedRegions) {
       const snapshot = modelViewerRef.current?.captureSnapshot() ?? null;
       setPaintPreviewDataUrl(snapshot);
+      const coloredThreeMF = modelViewerRef.current?.exportColoredThreeMF() ?? null;
+      setColoredThreeMFBlob(coloredThreeMF);
     } else {
       setPaintPreviewDataUrl(null);
+      setColoredThreeMFBlob(null);
     }
     setState((prev) => ({ ...prev, step: 3 }));
   }
@@ -193,6 +197,7 @@ export default function Home() {
           <CheckoutFlow
             file={uploadedFile}
             paintPreviewDataUrl={paintPreviewDataUrl}
+            coloredThreeMFBlob={coloredThreeMFBlob}
             summary={{
               fileName: state.fileName ?? "—",
               materialName: material.name,

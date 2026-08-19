@@ -7,6 +7,7 @@ import { COLORS } from "@/lib/constants";
 
 export interface ModelViewerHandle {
   captureSnapshot: () => string | null;
+  exportColoredThreeMF: () => Blob | null;
 }
 
 interface ModelViewerProps {
@@ -105,6 +106,7 @@ const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function Mod
 
   useImperativeHandle(forwardedRef, () => ({
     captureSnapshot: () => stlViewerRef.current?.captureSnapshot() ?? null,
+    exportColoredThreeMF: () => stlViewerRef.current?.exportColoredThreeMF() ?? null,
   }));
   const [isFullscreen, setIsFullscreen] = useState(false);
   const loaded = Boolean(file);

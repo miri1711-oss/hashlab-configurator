@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
       fileName: String(body.fileName ?? ""),
       modelFileUrl: body.modelFileUrl ? String(body.modelFileUrl) : null,
       paintPreviewUrl: body.paintPreviewUrl ? String(body.paintPreviewUrl) : null,
+      coloredThreeMFUrl: body.coloredThreeMFUrl ? String(body.coloredThreeMFUrl) : null,
       materialName,
       colorLabel,
       hasCustomPaint: Boolean(body.hasCustomPaint),

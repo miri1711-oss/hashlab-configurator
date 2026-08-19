@@ -26,6 +26,7 @@ export interface OrderSummaryData {
 interface CheckoutFlowProps {
   file: File | null;
   paintPreviewDataUrl?: string | null;
+  coloredThreeMFBlob?: Blob | null;
   summary: OrderSummaryData;
   onBack: () => void;
   onStartOver: () => void;
@@ -43,6 +44,7 @@ const EMPTY_DETAILS: CustomerDetails = {
 export default function CheckoutFlow({
   file,
   paintPreviewDataUrl,
+  coloredThreeMFBlob,
   summary,
   onBack,
   onStartOver,
@@ -173,6 +175,31 @@ export default function CheckoutFlow({
       }
     }
 
+    // Ak zakaznik pouzil viacfarebne malovanie, nahrame aj hotovy .3mf
+    // subor s farbami po jednotlivych trojuholnikoch (Standard 3MF format)
+    // - Bambu Studio ho vie priamo otvorit uz vyfarbeny, netreba domalovat
+    // rucne. Obrazok (paintPreviewUrl) zostava aj tak nahrany ako zaloha
+    // pre pripad, ze by sa .3mf subor v Bambu Studio z nejakeho dovodu
+    // otvoril nespravne.
+    let coloredThreeMFUrl: string | null = null;
+    if (coloredThreeMFBlob) {
+      try {
+        const threeMFForm = new FormData();
+        threeMFForm.append("file", coloredThreeMFBlob, `${newOrderNumber}-farebny.3mf`);
+        const threeMFUploadResponse = await fetch("/api/upload-stl", {
+          method: "POST",
+          body: threeMFForm,
+        });
+        const threeMFUploadData = await threeMFUploadResponse.json();
+        if (threeMFUploadResponse.ok && threeMFUploadData.url) {
+          coloredThreeMFUrl = threeMFUploadData.url;
+        }
+      } catch {
+        // Nepodarilo sa nahrat farebny .3mf - obsluha pouzije zalozny
+        // obrazok (paintPreviewUrl) a domaluje farby rucne.
+      }
+    }
+
     const orderPayload = {
       orderNumber: newOrderNumber,
       fullName: details.fullName,
@@ -187,6 +214,7 @@ export default function CheckoutFlow({
       fileName: summary.fileName,
       modelFileUrl,
       paintPreviewUrl,
+      coloredThreeMFUrl,
       materialName: summary.materialName,
       colorLabel: summary.colorLabel,
       hasCustomPaint: Boolean(summary.hasCustomPaint),

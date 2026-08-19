@@ -8,6 +8,7 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { computeDimensionsFromGeometry } from "@/lib/stl";
 import { buildTriangleMeshData, floodFillRegion, TriangleMeshData } from "@/lib/paint";
+import { buildColoredThreeMF } from "@/lib/threemf";
 import { ModelDimensions } from "@/lib/types";
 
 interface STLViewerProps {
@@ -25,6 +26,8 @@ interface STLViewerProps {
 export interface STLViewerHandle {
   /** Vrati aktualny obraz 3D nahladu (vratane namalovanych farieb) ako PNG data URL, alebo null ak nie je este pripraveny. */
   captureSnapshot: () => string | null;
+  /** Vytvori .3mf subor s farbami po jednotlivych trojuholnikoch (Standard 3MF), alebo null ak model nie je nacitany. */
+  exportColoredThreeMF: () => Blob | null;
 }
 
 const CLICK_MOVE_THRESHOLD_PX = 6;
@@ -68,6 +71,23 @@ const STLViewer = forwardRef<STLViewerHandle, STLViewerProps>(function STLViewer
       // najaktualnejsi obraz (vratane prave namalovanych farieb).
       renderer.render(scene, camera);
       return renderer.domElement.toDataURL("image/png");
+    },
+    exportColoredThreeMF: () => {
+      const meshData = meshDataRef.current;
+      if (!meshData) return null;
+      const overrides = triangleOverridesRef.current;
+      const base = baseColorRef.current;
+
+      const triangleColorsHex: string[] = new Array(meshData.triangleCount);
+      for (let t = 0; t < meshData.triangleCount; t++) {
+        const c = overrides.get(t) ?? base;
+        triangleColorsHex[t] = `#${c.getHexString()}`;
+      }
+
+      return buildColoredThreeMF({
+        positions: meshData.positions,
+        triangleColorsHex,
+      });
     },
   }));
 
