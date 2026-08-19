@@ -124,109 +124,59 @@ v databáze automaticky označí ako `status: "paid"` (cez webhook), takže
 šéf v prehľade objednávok (`/api/orders?key=...`) uvidí, ktoré objednávky
 sú skutočne zaplatené.
 
-## Prepojenie s tlačiarňou (Bambu Lab) - plná automatizácia tlače
+## Prepojenie s tlačiarňou (Bambu Lab) - automatické stiahnutie a otvorenie
 
-Cieľ: zákazník zaplatí objednávku → STL sa **automaticky nareže** (výber
-materiálu, výplne, auto-podpery) → hotový súbor sa **automaticky pošle**
-tlačiarni cez sieť → ty už len založíš filament a stlačíš tlačiť.
+Cieľ: zákazník zaplatí objednávku → systém automaticky stiahne model a
+rovno ho otvorí v Bambu Studio, pripravený na narezanie - obsluha už len
+vyberie materiál/farbu podľa názvu súboru a stlačí Slice + Print.
 
 **Čo je hotové:**
-- Skutočný STL súbor sa ukladá (nie len jeho názov) - do Vercel Blob
-  storage pri odoslaní objednávky (`app/api/upload-stl/route.ts`, volá sa z
-  `CheckoutFlow.tsx`). URL súboru je v databáze (`lib/db.ts`, stĺpec
-  `model_file_url`).
+- Skutočný STL/OBJ súbor sa ukladá (nie len jeho názov) - do Vercel Blob
+  storage pri odoslaní objednávky (`app/api/upload-stl/route.ts`).
 - Objednávky majú stav tlače (`print_status`) - `"pending"` kým čaká,
   `"sent_to_printer"` po spracovaní.
 - `app/api/print-queue/route.ts` - `GET` vráti nespracované zaplatené
   objednávky, `PATCH` označí objednávku ako hotovú.
 - `scripts/print_bridge.py` - beží na počítači **pri tlačiarni** (tá istá
   lokálna sieť) a pre každú novú objednávku:
-  1. Stiahne STL súbor
-  2. **Automaticky ho nareže** cez `Bambu Studio` v headless (CLI) režime,
-     s automatickým generovaním podpier (auto-supports - bežná, spoľahlivá
-     funkcia slicera)
-  3. Hotový výsledok **automaticky pošle tlačiarni** cez lokálnu sieť
-     (knižnica [`bambu-connect`](https://pypi.org/project/bambu-connect))
+  1. Stiahne STL/OBJ súbor do `scripts/na_vytlacenie/`
+  2. **Automaticky otvorí model v Bambu Studio** (`open -n -a
+     /Applications/BambuStudio.app <súbor>`)
+  3. Označí objednávku ako spracovanú
 
-**Dôležitá výnimka - materiál "Ultra Detail" (Resin):** Resin sa fyzicky
-**nedá tlačiť na FDM Bambu tlačiarni** (je to úplne iný typ tlačiarne -
-SLA/živicová). Objednávky s týmto materiálom skript vždy preskočí a nechá
-súbor v `na_vytlacenie/` na ručné vyriešenie (napr. poslať inému
-dodávateľovi s resin tlačiarňou, alebo zákazníkovi navrhnúť iný materiál).
+**Prečo je narezanie (slicing) zámerne ručný krok, nie plne automatický:**
+Skúšali sme aj plnú automatizáciu cez headless (na pozadí bežiace)
+rezanie Bambu Studio CLI - ukázalo sa ale, že tento spôsob negeneruje
+správne inštrukcie pre výber materiálu z AMS (tlačiareň by nevedela,
+ktorý filament použiť, aj keby boli cievky v AMS správne založené). Je to
+reálne obmedzenie tohto konkrétneho nástroja, nie niečo, čo sa dá
+jednoducho opraviť z našej strany. Preto namiesto rizikového "naslepo"
+automatického tlačenia systém pripraví a otvorí model, a posledné 2 kliky
+(Slice, Print) robí človek priamo v appke, ktorá je naživo pripojená k
+tlačiarni a AMS priradenie vyrieši sama, správne.
 
-### Prečo je potrebný jednorazový export profilov z Bambu Studio
-
-Narezanie potrebuje presné nastavenia **tvojej konkrétnej tlačiarne**
-(rozmery podložky, teploty, kalibrácia) - tie sa nedajú len tak "uhádnuť"
-zvonka. Preto sa **raz** vyexportujú tie isté profily, čo už bežne
-používaš a poznáš ako funkčné.
-
-### Nastavenie krok za krokom
+### Nastavenie
 
 **1. Príprava tlačiarne** (raz, na dotykovej obrazovke):
-   - Zapni **Developer Mode**
-   - Zapni **LAN Only mode**, over si **IP adresu**, **Access Code**,
-     **sériové číslo**
+   - Zapni **Developer Mode**, zapni **LAN Only mode**
+   - Over si **IP adresu**, **Access Code**, **sériové číslo**
 
-**2. OrcaSlicer netreba** - používame priamo Bambu Studio, ktorú už máš nainštalovanú
-
-**3. V Bambu Studio priprav a exportuj profily** (Printer/Filament/Process
-   nastavenia → tlačidlo "..." → Export), s **zapnutými auto-podperami**
-   (Support → Support ON), a ulož ich presne do `scripts/profiles/` pod
-   týmito názvami:
-   ```
-   profiles/machine.json                 - profil tvojej tlačiarne
-   profiles/filament_standard.json       - PLA (Štandardný plast)
-   profiles/filament_durable.json        - PETG (Odolný plast)
-   profiles/filament_outdoor.json        - ASA (Exteriér & Teplo)
-   profiles/filament_flex.json           - TPU (Pružný gumený)
-   profiles/process_light.json           - výplň 15 % (Ľahká)
-   profiles/process_standard.json        - výplň 30 % (Štandardná)
-   profiles/process_strong.json          - výplň 80 % (Pevná)
-   ```
-   (Ultra Detail/Resin zámerne nemá profil - pozri vyššie.)
-
-**4. Inštalácia a nastavenie skriptu:**
+**2. Spustenie skriptu:**
 ```bash
 cd scripts
-pip install requests bambu-connect
-
+pip install requests
 export HASHLAB_ORDERS_KEY="rovnaké heslo ako ORDERS_VIEW_KEY vo Verceli"
-export PRINTER_IP="192.168.x.x"
-export PRINTER_ACCESS_CODE="12345678"
-export PRINTER_SERIAL="01P00A000000000"
-```
-
-**5. Prvý test naprázdno** (`AUTO_SEND_TO_PRINTER = False`, predvolené) -
-   spusti `python3 print_bridge.py`, počkaj na testovaciu objednávku,
-   **ručne otvor výsledný `.gcode.3mf` v Bambu Studio a skontroluj náhľad**
-   (orientáciu, podpery, či to vyzerá rozumne) - až keď si istá, že to
-   vyzerá dobre, pokračuj ďalej.
-
-**6. Zapni ostrý režim:**
-```bash
 python3 print_bridge.py
 ```
-(v súbore nastav `AUTO_SEND_TO_PRINTER = True`, alebo cez terminál:
-`sed -i '' 's/AUTO_SEND_TO_PRINTER = False/AUTO_SEND_TO_PRINTER = True/' print_bridge.py`)
 
 ### Ako to funguje v praxi
 
-1. Zákazník zaplatí → skript stiahne, automaticky nareže a pošle do
-   tlačiarne bez zásahu
-2. Ty prídeš k tlačiarni, založíš filament podľa toho, čo ukazuje
-   tlačový front na obrazovke, a stlačíš tlačiť
-3. **Výnimka:** ak objednávka má materiál bez profilu (Resin) alebo
-   rezanie z nejakého dôvodu zlyhá, súbor ostane v `na_vytlacenie/` a
-   objednávka sa neoznačí ako hotová - vybavíš ju ručne (narežeš sama a
-   uložíš do `narezane/`, skript to aj tak pošle do tlačiarne)
-
-**Poznámka:** `bambu-connect` a headless CLI Bambu Studio sú nezávislé
-(neoficiálne/menej zdokumentované) nástroje, nie oficiálne API od Bambu Lab.
-Ak sa po aktualizácii zmenia príkazy, pozri si aktuálnu dokumentáciu:
-https://github.com/mattcar15/bambu-connect a
-https://github.com/bambulab/BambuStudio/wiki/Command-Line-Usage.
-
+1. Zákazník zaplatí → skript stiahne model a automaticky otvorí Bambu
+   Studio s ním
+2. Obsluha nastaví materiál/farbu/výplň podľa údajov v názve súboru
+   (napr. `HL-2026-XXXX_Odolný_plast_Antracitová_Štandardná_1ks.stl`),
+   klikne **Slice** a **Print** - appka sama zariadi správny výber
+   materiálu z AMS
 
 ## Kontaktný formulár (Resend)
 
@@ -234,6 +184,20 @@ Stránka `/kontakt` umožňuje zákazníkom poslať otázku - správa sa odošle
 emailom na `mirkap1711@gmail.com` (nastavené v `app/api/contact/route.ts`,
 konštanta `CONTACT_RECIPIENT` - zmeň, keď budete chcieť prejsť na šéfov
 email).
+
+**Potvrdenie objednávky emailom zákazníkovi** (`lib/email.ts`,
+`sendOrderConfirmationEmail`) sa posiela automaticky:
+- Pri **dobierke** - hneď po vytvorení objednávky (`app/api/orders/route.ts`)
+- Pri **platbe kartou** - až po potvrdení platby od Stripe
+  (`app/api/stripe-webhook/route.ts`), nie hneď pri vytvorení objednávky -
+  aby sa neposlalo potvrdenie pri nedokončenej/zlyhanej platbe
+
+Používa ten istý `RESEND_API_KEY` ako kontaktný formulár - žiadne ďalšie
+nastavenie netreba, funguje to hneď, keď je premenná nastavená vo Verceli.
+
+**Výmena API kľúča za iný (napr. šéfov) kedykoľvek neskôr:** stačí prepísať
+hodnotu premennej `RESEND_API_KEY` vo Verceli (Settings → Environment
+Variables) na nový kľúč a spraviť Redeploy - v kóde sa nič meniť nemusí.
 
 **Nastavenie (jednorazovo, vo Verceli):**
 1. Zaregistruj sa na [resend.com](https://resend.com) (má bezplatný plán)
@@ -247,7 +211,8 @@ dá sa posielať len z ich testovacej adresy (`onboarding@resend.dev`) - to
 v kóde už je nastavené a funguje to na posielanie na `mirkap1711@gmail.com`
 bez ďalšieho nastavovania. Ak by ste chceli posielať z vlastnej adresy
 (napr. `info@hashlab.sk`), treba v Resend overiť doménu `hashlab.sk`
-(pridanie DNS záznamov) - vtedy uprav aj `from` pole v `route.ts`.
+(pridanie DNS záznamov) - vtedy uprav aj `from` pole v `route.ts` a
+`lib/email.ts`.
 
 ## Nahrávanie .obj súborov a výber výšky vrstvy
 
@@ -259,6 +224,33 @@ bez ďalšieho nastavovania. Ak by ste chceli posielať z vlastnej adresy
   hodnoty v `lib/constants.ts` → `LAYER_HEIGHTS`) - hodnota `0.2 mm` je
   označená ako odporúčaná/predvolená. Vybraná hodnota sa ukladá k objednávke
   (stĺpec `layer_height_label`) a zobrazuje sa aj v prehľade objednávky.
+
+## Skutočný výber Packeta výdajného miesta (widget v6)
+
+Konfigurátor teraz vie zobraziť oficiálnu Packeta mapu na výber výdajného
+miesta (namiesto textového políčka) - stačí doplniť API kľúč.
+
+**Ako získať API kľúč (zadarmo):**
+1. Zaregistruj firmu na [client.packeta.com](https://client.packeta.com)
+2. V klientskej sekcii nájdi svoj API kľúč (widget kľúč)
+
+**Nastavenie vo Verceli:**
+1. **Settings → Environment Variables** → pridaj `NEXT_PUBLIC_PACKETA_API_KEY`
+   s hodnotou tohto kľúča (Production + Preview)
+2. Redeploy
+
+**Dôležité:** táto premenná musí mať presne predponu `NEXT_PUBLIC_` (nie
+len `PACKETA_API_KEY`) - inak ju appka v prehliadači nevidí. Kým premenná
+nie je nastavená, appka automaticky zobrazí pôvodné textové pole (nič sa
+nepokazí, len sa nevyužije mapa).
+
+## Mobilná verzia
+
+Prešla som layout appky ohľadom zobrazenia na mobile - hlavička (kroky
+1-3 + odkaz Kontakt) sa teraz na malých obrazovkách preusporiadava na
+viac riadkov namiesto orezania/pretečenia mimo obrazovku. Zvyšok appky
+(3D náhľad, panely materiálu/farby/výplne, checkout formulár) už bol
+postavený responzívne (Tailwind `sm:`/`lg:` breakpointy).
 
 ## Farba modelu, maľovanie viacerých farieb a tmavý/svetlý náhľad
 
