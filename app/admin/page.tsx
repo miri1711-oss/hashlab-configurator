@@ -49,6 +49,7 @@ export default async function AdminPage() {
                 <th className="px-4 py-3">Cena</th>
                 <th className="px-4 py-3">Platba</th>
                 <th className="px-4 py-3">Doprava</th>
+                <th className="px-4 py-3">Odhad tlače</th>
                 <th className="px-4 py-3">Tlač</th>
                 <th className="px-4 py-3">Dátum</th>
               </tr>
@@ -90,6 +91,16 @@ export default async function AdminPage() {
                       ) : order.shipping_method === "packeta_domov" ? (
                         <div className="mt-0.5 text-amber-600">zásielka sa nevytvorila</div>
                       ) : null}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-[var(--text-3)]">
+                      {order.slice_print_time_seconds ? (
+                        <div>
+                          <div>{Math.round((order.slice_print_time_seconds as number) / 60)} min</div>
+                          <div>{Number(order.slice_filament_grams).toFixed(1)} g</div>
+                        </div>
+                      ) : (
+                        <span>—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <PrintStatusButton

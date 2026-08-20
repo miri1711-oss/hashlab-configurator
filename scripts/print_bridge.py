@@ -54,6 +54,13 @@ try:
 except ImportError:
     MQTT_AVAILABLE = False
 
+try:
+    import requests
+
+    REQUESTS_AVAILABLE = True
+except ImportError:
+    REQUESTS_AVAILABLE = False
+
 # ---------------------------------------------------------------------------
 # NASTAVENIA - uprav podla seba
 # ---------------------------------------------------------------------------
@@ -62,6 +69,30 @@ SITE_URL = "https://hashlab-configurator.vercel.app"
 ORDERS_VIEW_KEY = os.environ.get("HASHLAB_ORDERS_KEY", "SEM_DAJ_SVOJE_HESLO")
 
 OUTPUT_DIR = Path(__file__).parent / "na_vytlacenie"
+
+# Docker "sidecar" na spravne narezanie s AMS instrukciami (viac v README) -
+# NEPOVINNE. Ak subory s profilmi neexistuju alebo sidecar nebezi, skript sa
+# jednoducho vrati k povodnemu spravaniu (otvori nenarezany model, clovek
+# klikne Slice + Print rucne).
+SLICER_API_URL = os.environ.get("SLICER_API_URL", "http://localhost:3001")
+SLICER_PROFILES_DIR = Path(
+    os.environ.get("SLICER_PROFILES_DIR", str(Path.home() / "bambu-slicer-data" / "moje-profily"))
+)
+SLICER_BED_TYPE = os.environ.get("SLICER_BED_TYPE", "Textured PEI Plate")
+
+# Mapovanie nazvu materialu z objednavky (presne tak, ako je v appke) na
+# nazov exportovaneho filament profilu. Ak pre dany material profil este
+# nemas exportovany, pouzije sa zalozny "filament.json" (aj ked nemusi byt
+# presne spravny typ) - v logu sa to jasne vypise, aby si vedela, ktore
+# materialy este treba doplnit. Postup zohnania noveho profilu je rovnaky,
+# ako sme robili pre PETG - pozri README.
+MATERIAL_PROFILE_MAP = {
+    "Štandardný plast": "pla.json",
+    "Odolný plast": "filament.json",  # PETG - uz mame exportovane
+    "Exteriér & Teplo": "asa.json",
+    "Pružný gumený": "tpu.json",
+    "Ultra Detail": "resin.json",
+}
 
 POLL_INTERVAL_SECONDS = 30
 
@@ -101,6 +132,69 @@ def mark_as_sent(order_id: str) -> None:
 def safe_filename_part(text: str) -> str:
     keep = "-_. "
     return "".join(c if c.isalnum() or c in keep else "_" for c in text).strip()
+
+
+def slice_via_docker(stl_path: Path, material_name: str = "") -> Path | None:
+    """
+    Posle model na Docker "sidecar" nastroj na spravne narezanie (s
+    fungujucimi AMS instrukciami). Vrati cestu k narezanemu .3mf suboru, ak
+    sa to podari, inak None (a zavolajuci sa vrati k povodnemu spravaniu -
+    otvori nenarezany model, clovek klikne Slice + Print rucne).
+
+    NEPOVINNE: vyzaduje bezici Docker sidecar (localhost:3001) a subory s
+    profilmi v SLICER_PROFILES_DIR (tlaciaren.json, nastavenie.json a
+    aspon jeden filament profil) - pozri README pre navod na ich zohnanie.
+    """
+    if not REQUESTS_AVAILABLE:
+        print("[rezanie] Chyba kniznica requests - spusti `pip install requests`. Preskakujem automaticke rezanie.")
+        return None
+
+    printer_profile = SLICER_PROFILES_DIR / "tlaciaren.json"
+    process_profile = SLICER_PROFILES_DIR / "nastavenie.json"
+
+    wanted_filament_name = MATERIAL_PROFILE_MAP.get(material_name, "filament.json")
+    filament_profile = SLICER_PROFILES_DIR / wanted_filament_name
+    if not filament_profile.exists():
+        fallback = SLICER_PROFILES_DIR / "filament.json"
+        print(
+            f"[rezanie] UPOZORNENIE: chyba profil '{wanted_filament_name}' pre material "
+            f"'{material_name}' - pouzivam zalozny '{fallback.name}' (nemusi byt spravny typ materialu)."
+        )
+        filament_profile = fallback
+
+    if not (printer_profile.exists() and filament_profile.exists() and process_profile.exists()):
+        print(f"[rezanie] Chybaju profily v {SLICER_PROFILES_DIR} - preskakujem automaticke rezanie.")
+        return None
+
+    try:
+        with open(stl_path, "rb") as model_file, open(printer_profile, "rb") as pf, open(
+            filament_profile, "rb"
+        ) as ff, open(process_profile, "rb") as prf:
+            files = {
+                "file": (stl_path.name, model_file, "model/stl"),
+                "printerProfile": ("printer.json", pf, "application/json"),
+                "filamentProfile": ("filament.json", ff, "application/json"),
+                "presetProfile": ("process.json", prf, "application/json"),
+            }
+            data = {"exportType": "3mf", "bedType": SLICER_BED_TYPE}
+            response = requests.post(f"{SLICER_API_URL}/slice", files=files, data=data, timeout=180)
+
+        if response.status_code != 200:
+            print(f"[rezanie] Zlyhalo (kod {response.status_code}): {response.text[:300]}")
+            return None
+
+        sliced_path = stl_path.with_suffix(".gcode.3mf")
+        sliced_path.write_bytes(response.content)
+        print_time_s = response.headers.get("X-Print-Time-Seconds")
+        filament_g = response.headers.get("X-Filament-Used-g")
+        print(
+            f"[rezanie] OK -> {sliced_path.name}"
+            + (f"  (cas tlace: ~{int(print_time_s)//60} min, filament: {filament_g} g)" if print_time_s else "")
+        )
+        return sliced_path
+    except Exception as exc:  # noqa: BLE001
+        print(f"[rezanie] Chyba pri volani rezacieho nastroja: {exc}")
+        return None
 
 
 def download_stl(order: dict) -> Path:
@@ -178,15 +272,32 @@ def process_order_queue() -> None:
                     f"    ✓ FAREBNY .3MF - model by sa mal otvorit uz vyfarbeny "
                     f"(over si to, obrazok je zaloha ak by farby nesedeli)"
                 )
+                open_in_bambu_studio(local_path)
+                print(f"[bambu] Otvorene v Bambu Studio -> {local_path.name}")
+                print("[bambu] Teraz uz len: over farby, Slice, Print.")
             elif order.get("paint_preview_url"):
                 preview_name = local_path.stem + "_FARBY.png"
                 print(
                     f"    !! VIACFAREBNY MODEL (bez hotoveho 3mf) - pozri obrazok "
                     f"{preview_name} a domaluj farby rucne v Bambu Studio"
                 )
-            open_in_bambu_studio(local_path)
-            print(f"[bambu] Otvorene v Bambu Studio -> {local_path.name}")
-            print("[bambu] Teraz uz len: nastav material/farbu/vyplnu, Slice, Print.")
+                open_in_bambu_studio(local_path)
+                print(f"[bambu] Otvorene v Bambu Studio -> {local_path.name}")
+                print("[bambu] Teraz uz len: nastav material/farbu/vyplnu, Slice, Print.")
+            else:
+                # Bezny (jednofarebny) model - skus automaticke rezanie cez
+                # Docker sidecar (spravne AMS instrukcie). Ak sa nepodari
+                # (sidecar nebezi, chybaju profily...), padneme spat na
+                # povodne spravanie - otvorenie nenarezaneho modelu.
+                sliced_path = slice_via_docker(local_path, order.get("material_name", ""))
+                if sliced_path:
+                    open_in_bambu_studio(sliced_path)
+                    print(f"[bambu] Otvorene UZ NAREZANE v Bambu Studio -> {sliced_path.name}")
+                    print("[bambu] Skontroluj AMS vyber a rovno klikni Print.")
+                else:
+                    open_in_bambu_studio(local_path)
+                    print(f"[bambu] Otvorene v Bambu Studio -> {local_path.name}")
+                    print("[bambu] Teraz uz len: nastav material/farbu/vyplnu, Slice, Print.")
             mark_as_sent(order_id)
         except Exception as exc:  # noqa: BLE001
             print(f"[objednavky] CHYBA {order_id}: {exc}")

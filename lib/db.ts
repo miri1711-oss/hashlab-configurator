@@ -67,6 +67,8 @@ async function ensureOrdersTable() {
   await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS paint_preview_url TEXT;`;
   await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS colored_threemf_url TEXT;`;
   await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS packeta_barcode TEXT;`;
+  await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS slice_print_time_seconds INTEGER;`;
+  await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS slice_filament_grams REAL;`;
   tableEnsured = true;
 }
 
@@ -173,6 +175,15 @@ export async function updatePrintStatus(id: string, printStatus: string) {
 export async function updatePacketaBarcode(id: string, barcode: string) {
   await ensureOrdersTable();
   await sql`UPDATE orders SET packeta_barcode = ${barcode} WHERE id = ${id};`;
+}
+
+export async function updateSliceEstimate(id: string, printTimeSeconds: number, filamentGrams: number) {
+  await ensureOrdersTable();
+  await sql`
+    UPDATE orders
+    SET slice_print_time_seconds = ${printTimeSeconds}, slice_filament_grams = ${filamentGrams}
+    WHERE id = ${id};
+  `;
 }
 
 let printerStatusTableEnsured = false;
