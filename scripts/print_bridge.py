@@ -21,17 +21,38 @@ Preto: system automaticky stiahne a otvori model, cloveka uz len treba na
 posledne 2 kliky (Slice + Print) - odpada rucne hladanie suborov po
 emailoch/databaze.
 
+NOVE - ZIVY STAV TLACIARNE PRE ZAKAZNIKOV:
+Skript sa (ak su nastavene PRINTER_IP/PRINTER_ACCESS_CODE/PRINTER_SERIAL)
+navyse pripoji priamo na tlaciareň (rovnaky pristupovy kod ako pri LAN
+Only Mode) a pravidelne posiela webu, ci prave tlaci a co je zalozene v
+AMS - toto sa potom zobrazuje zakaznikom este pred objednavkou. Vyzaduje
+kniznicu paho-mqtt (pip install paho-mqtt). Ak tieto premenne nie su
+nastavene, tato cast sa jednoducho vynecha, zvysok skriptu funguje ako
+doteraz.
+
 AKO TO SPUSTIT:
-    pip install requests
+    pip install requests paho-mqtt
+    export PRINTER_IP="192.168.1.25"
+    export PRINTER_ACCESS_CODE="tvoj-pristupovy-kod"
+    export PRINTER_SERIAL="tvoje-seriove-cislo"
     python3 print_bridge.py
 """
 
 import json
 import os
+import ssl
 import subprocess
+import threading
 import time
 import urllib.request
 from pathlib import Path
+
+try:
+    import paho.mqtt.client as mqtt
+
+    MQTT_AVAILABLE = True
+except ImportError:
+    MQTT_AVAILABLE = False
 
 # ---------------------------------------------------------------------------
 # NASTAVENIA - uprav podla seba
@@ -47,6 +68,13 @@ POLL_INTERVAL_SECONDS = 30
 # Nazov aplikacie tak, ako ho pozna macOS (Launch Services). Ak by sa
 # aplikacia neotvorila, over si presny nazov v /Applications.
 BAMBU_STUDIO_APP_NAME = os.environ.get("BAMBU_STUDIO_APP_NAME", "Bambu Studio")
+
+# Pripojenie priamo na tlaciaren (pre zivy stav/AMS pre zakaznikov) -
+# NEPOVINNE, ak chybaju, tato cast sa jednoducho vynecha.
+PRINTER_IP = os.environ.get("PRINTER_IP", "")
+PRINTER_ACCESS_CODE = os.environ.get("PRINTER_ACCESS_CODE", "")
+PRINTER_SERIAL = os.environ.get("PRINTER_SERIAL", "")
+PRINTER_ID = os.environ.get("PRINTER_ID", "hlavna")  # nazov v appke
 
 # ---------------------------------------------------------------------------
 
@@ -164,6 +192,169 @@ def process_order_queue() -> None:
             print(f"[objednavky] CHYBA {order_id}: {exc}")
 
 
+def _hex_from_bambu_color(color8: str) -> str:
+    """Bambu farby su 8-znakove RRGGBBAA - appke stac RRGGBB s '#' na zaciatku."""
+    if not color8 or len(color8) < 6:
+        return "#cccccc"
+    return f"#{color8[:6]}"
+
+
+def _post_printer_status(is_printing, job_name, progress_percent, ams_slots) -> None:
+    try:
+        payload = json.dumps(
+            {
+                "printerId": PRINTER_ID,
+                "isPrinting": is_printing,
+                "currentJobName": job_name,
+                "progressPercent": progress_percent,
+                "amsSlots": ams_slots,
+            }
+        ).encode("utf-8")
+        req = urllib.request.Request(
+            f"{SITE_URL}/api/printer-status?key={ORDERS_VIEW_KEY}",
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        urllib.request.urlopen(req, timeout=10)
+    except Exception as exc:  # noqa: BLE001
+        print(f"[tlaciaren] Nepodarilo sa poslat stav appke: {exc}")
+
+
+# Tlaciaren neposiela vzdy KOMPLETNY stav v kazdej MQTT sprave - niektore
+# spravy obsahuju napr. len info o AMS, bez informacie o tom, ci sa prave
+# tlaci. Preto si stav "skladame" postupne (aktualizujeme len to, co prave
+# prislo, zvysok si pamatame z predoslych sprav) - inak by sa mohlo stat,
+# ze appka nahodne odosle neuplnu spravu a nespravne ukaze "volna" aj ked
+# tlaciaren prave tlaci.
+_state_lock = threading.Lock()
+_current_state = {
+    "gcode_state": None,
+    "job_name": None,
+    "progress": None,
+    "ams_slots": [],
+}
+
+
+def _handle_mqtt_message(client, userdata, msg) -> None:
+    try:
+        data = json.loads(msg.payload.decode("utf-8"))
+    except Exception:  # noqa: BLE001
+        return
+
+    print_info = data.get("print")
+    if not print_info:
+        return
+
+    with _state_lock:
+        if "gcode_state" in print_info:
+            _current_state["gcode_state"] = print_info["gcode_state"]
+        if "subtask_name" in print_info:
+            _current_state["job_name"] = print_info["subtask_name"] or None
+        if "mc_percent" in print_info:
+            _current_state["progress"] = print_info["mc_percent"]
+
+        ams_container = print_info.get("ams")
+        if ams_container and "ams" in ams_container:
+            ams_slots = []
+            for ams_unit in ams_container["ams"]:
+                unit_id = ams_unit.get("id", "0")
+                for tray in ams_unit.get("tray", []):
+                    material = tray.get("tray_type")
+                    if not material:
+                        continue  # prazdny slot, preskoc
+                    tray_id = tray.get("id", "0")
+                    try:
+                        slot_number = int(unit_id) * 4 + int(tray_id) + 1
+                    except (TypeError, ValueError):
+                        slot_number = 0
+                    remain = tray.get("remain")
+                    ams_slots.append(
+                        {
+                            "slot": slot_number,
+                            "materialType": material,
+                            "colorHex": _hex_from_bambu_color(tray.get("tray_color", "")),
+                            "remainingPercent": remain if isinstance(remain, int) else None,
+                        }
+                    )
+            _current_state["ams_slots"] = ams_slots
+
+
+PRINTING_STATES = ("RUNNING", "PREPARE", "SLICING")
+STATUS_SEND_INTERVAL_SECONDS = 20
+
+
+def _periodic_status_sender() -> None:
+    """Bezi nepretrzite v samostatnom vlakne - kazdych STATUS_SEND_INTERVAL_SECONDS
+    posle appke aktualne (poskladane) zname udaje, nezavisle na tom, kedy presne
+    prisla posledna MQTT sprava."""
+    while True:
+        time.sleep(STATUS_SEND_INTERVAL_SECONDS)
+        with _state_lock:
+            gcode_state = _current_state["gcode_state"]
+            if gcode_state is None:
+                continue  # este sme nedostali ziadnu spravu s tymto udajom
+            is_printing = gcode_state in PRINTING_STATES
+            job_name = _current_state["job_name"]
+            progress = _current_state["progress"]
+            ams_slots = list(_current_state["ams_slots"])
+        _post_printer_status(is_printing, job_name, progress, ams_slots)
+
+
+def start_printer_status_reporter() -> None:
+    """
+    Bezi na pozadi (samostatne vlakno) - pripoji sa na tlaciaren cez MQTT
+    (rovnaky pristupovy kod ako pri LAN Only Mode) a periodicky posiela
+    appke jej zivy stav (tlaci/volna + zalozene materialy v AMS), aby to
+    zakaznik videl este pred objednavkou. Ak chybaju potrebne premenne
+    alebo kniznica paho-mqtt, tato cast sa jednoducho vynecha a zvysok
+    skriptu (sledovanie objednavok) funguje normalne dalej.
+    """
+    if not (PRINTER_IP and PRINTER_ACCESS_CODE and PRINTER_SERIAL):
+        print(
+            "[tlaciaren] PRINTER_IP/PRINTER_ACCESS_CODE/PRINTER_SERIAL nie su "
+            "nastavene - zivy stav tlaciarne sa nebude zobrazovat zakaznikom."
+        )
+        return
+    if not MQTT_AVAILABLE:
+        print("[tlaciaren] Chyba kniznica paho-mqtt - spusti `pip install paho-mqtt`.")
+        return
+
+    def run() -> None:
+        try:
+            client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1)
+        except AttributeError:
+            client = mqtt.Client()  # starsia verzia paho-mqtt (1.x)
+
+        client.username_pw_set("bblp", PRINTER_ACCESS_CODE)
+        client.tls_set(cert_reqs=ssl.CERT_NONE)
+        client.tls_insecure_set(True)  # tlaciaren pouziva vlastny (self-signed) certifikat
+        client.on_message = _handle_mqtt_message
+
+        def on_connect(client, userdata, flags, rc):
+            if rc == 0:
+                print("[tlaciaren] Pripojene na tlaciaren (MQTT), sledujem stav...")
+                client.subscribe(f"device/{PRINTER_SERIAL}/report")
+            else:
+                print(f"[tlaciaren] Pripojenie na tlaciaren zlyhalo (kod {rc}) - over IP/kod/seriove cislo.")
+
+        client.on_connect = on_connect
+
+        while True:
+            try:
+                client.connect(PRINTER_IP, 8883, keepalive=30)
+                client.loop_forever()
+            except Exception as exc:  # noqa: BLE001
+                print(f"[tlaciaren] Chyba pripojenia na tlaciaren: {exc} - skusam znova o 15s")
+                time.sleep(15)
+
+    thread = threading.Thread(target=run, daemon=True)
+    thread.start()
+
+    sender_thread = threading.Thread(target=_periodic_status_sender, daemon=True)
+    sender_thread.start()
+
+
 def print_startup_info() -> None:
     print(f"Sledujem nove objednavky na {SITE_URL} (kazdych {POLL_INTERVAL_SECONDS}s)")
     print(f"  STL subory: {OUTPUT_DIR.resolve()}")
@@ -180,6 +371,7 @@ def main() -> None:
         return
 
     print_startup_info()
+    start_printer_status_reporter()
 
     while True:
         try:
