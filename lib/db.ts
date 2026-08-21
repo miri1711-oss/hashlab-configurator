@@ -186,6 +186,61 @@ export async function updateSliceEstimate(id: string, printTimeSeconds: number, 
   `;
 }
 
+let filamentStockTableEnsured = false;
+
+async function ensureFilamentStockTable() {
+  if (filamentStockTableEnsured) return;
+  // Sklad sa vedie podla kombinacie material + farba (presne tak, ako sa
+  // zobrazuje zakaznikovi) - "id" je tychto dvoch hodnot spojenych, aby sa
+  // dalo jednoducho pouzit ako primarny kluc bez duplicit.
+  await sql`
+    CREATE TABLE IF NOT EXISTS filament_stock (
+      id TEXT PRIMARY KEY,
+      material_name TEXT NOT NULL,
+      color_label TEXT NOT NULL,
+      quantity_grams REAL NOT NULL DEFAULT 0,
+      updated_at TIMESTAMPTZ DEFAULT now()
+    );
+  `;
+  filamentStockTableEnsured = true;
+}
+
+function stockKey(materialName: string, colorLabel: string): string {
+  return `${materialName}|${colorLabel}`;
+}
+
+export async function listFilamentStock() {
+  await ensureFilamentStockTable();
+  const result = await sql`SELECT * FROM filament_stock ORDER BY material_name, color_label;`;
+  return result.rows;
+}
+
+/** Pridanie zasoby (napr. pri dokupeni novej cievky) - kladne cislo pripocita, zaporne odpocita. */
+export async function adjustFilamentStock(materialName: string, colorLabel: string, deltaGrams: number) {
+  await ensureFilamentStockTable();
+  const id = stockKey(materialName, colorLabel);
+  await sql`
+    INSERT INTO filament_stock (id, material_name, color_label, quantity_grams, updated_at)
+    VALUES (${id}, ${materialName}, ${colorLabel}, GREATEST(${deltaGrams}, 0), now())
+    ON CONFLICT (id) DO UPDATE SET
+      quantity_grams = GREATEST(filament_stock.quantity_grams + ${deltaGrams}, 0),
+      updated_at = now();
+  `;
+}
+
+/** Nastavenie presnej hodnoty zasoby (pouziva admin panel pri manualnej uprave). */
+export async function setFilamentStock(materialName: string, colorLabel: string, quantityGrams: number) {
+  await ensureFilamentStockTable();
+  const id = stockKey(materialName, colorLabel);
+  await sql`
+    INSERT INTO filament_stock (id, material_name, color_label, quantity_grams, updated_at)
+    VALUES (${id}, ${materialName}, ${colorLabel}, ${Math.max(quantityGrams, 0)}, now())
+    ON CONFLICT (id) DO UPDATE SET
+      quantity_grams = ${Math.max(quantityGrams, 0)},
+      updated_at = now();
+  `;
+}
+
 let printerStatusTableEnsured = false;
 
 async function ensurePrinterStatusTable() {

@@ -18,18 +18,30 @@ interface PrinterStatus {
   is_stale: boolean;
 }
 
+interface StockRow {
+  material_name: string;
+  color_label: string;
+  quantity_grams: number;
+}
+
 export default function PrinterStatusBadge() {
   const [printers, setPrinters] = useState<PrinterStatus[] | null>(null);
+  const [stock, setStock] = useState<StockRow[] | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
       try {
-        const response = await fetch("/api/printer-status");
-        const data = await response.json();
-        if (!cancelled && data.ok) {
-          setPrinters(data.printers);
+        const [statusResponse, stockResponse] = await Promise.all([
+          fetch("/api/printer-status"),
+          fetch("/api/filament-stock"),
+        ]);
+        const statusData = await statusResponse.json();
+        const stockData = await stockResponse.json();
+        if (!cancelled) {
+          if (statusData.ok) setPrinters(statusData.printers);
+          if (stockData.ok) setStock(stockData.stock);
         }
       } catch {
         // ticho zlyha - status je len informativny, nema blokovat objednavku
@@ -92,6 +104,22 @@ export default function PrinterStatusBadge() {
           </div>
         );
       })}
+
+      {stock && stock.filter((row) => row.quantity_grams > 0).length > 0 && (
+        <div className="flex flex-wrap items-center gap-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3.5 py-2.5 text-xs">
+          <span className="font-semibold text-[var(--text-1)]">Skladom:</span>
+          {stock
+            .filter((row) => row.quantity_grams > 0)
+            .map((row) => (
+              <span
+                key={`${row.material_name}|${row.color_label}`}
+                className="rounded-full bg-[var(--surface-2)] px-2 py-0.5"
+              >
+                {row.material_name} ({row.color_label}) - {Math.round(row.quantity_grams)} g
+              </span>
+            ))}
+        </div>
+      )}
     </div>
   );
 }

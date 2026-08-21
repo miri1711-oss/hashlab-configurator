@@ -1,9 +1,10 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { verifySessionToken, SESSION_COOKIE_NAME } from "@/lib/session";
-import { listOrders } from "@/lib/db";
+import { listOrders, listFilamentStock } from "@/lib/db";
 import LogoutButton from "@/components/LogoutButton";
 import PrintStatusButton from "@/components/PrintStatusButton";
+import FilamentStockEditor from "@/components/FilamentStockEditor";
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   cod: { label: "Dobierka", color: "bg-sky-50 text-sky-700" },
@@ -27,6 +28,7 @@ export default async function AdminPage() {
   }
 
   const orders = await listOrders();
+  const filamentStock = await listFilamentStock();
 
   return (
     <div className="min-h-screen bg-[var(--surface-2)] px-4 py-8 sm:px-6">
@@ -37,6 +39,16 @@ export default async function AdminPage() {
             <p className="text-sm text-[var(--text-3)]">Spolu {orders.length} (posledných 200)</p>
           </div>
           <LogoutButton />
+        </div>
+
+        <div className="mb-6">
+          <FilamentStockEditor
+            initialStock={filamentStock.map((row) => ({
+              material_name: row.material_name as string,
+              color_label: row.color_label as string,
+              quantity_grams: Number(row.quantity_grams),
+            }))}
+          />
         </div>
 
         <div className="overflow-x-auto rounded-2xl border border-[var(--border)] bg-white">
