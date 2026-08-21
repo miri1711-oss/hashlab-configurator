@@ -1,4 +1,4 @@
-import { ColorOption, InfillOption, LayerHeightOption, MaterialOption } from "./types";
+import { ColorOption, InfillOption, MaterialOption } from "./types";
 
 export const MATERIALS: MaterialOption[] = [
   {
@@ -24,12 +24,6 @@ export const MATERIALS: MaterialOption[] = [
     name: "Pružný gumený",
     description: "TPU · ohybné a nárazuvzdorné diely",
     pricePerCm3: 0.13,
-  },
-  {
-    id: "detail",
-    name: "Ultra Detail",
-    description: "Resin · vysoká presnosť a hladkosť",
-    pricePerCm3: 0.18,
   },
 ];
 

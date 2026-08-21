@@ -1,4 +1,4 @@
-export type MaterialId = "standard" | "durable" | "outdoor" | "flex" | "detail";
+export type MaterialId = "standard" | "durable" | "outdoor" | "flex";
 
 export interface MaterialOption {
   id: MaterialId;
