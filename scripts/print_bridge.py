@@ -91,7 +91,16 @@ MATERIAL_PROFILE_MAP = {
     "Odolný plast": "filament.json",  # PETG - uz mame exportovane
     "Exteriér & Teplo": "asa.json",
     "Pružný gumený": "tpu.json",
-    "Ultra Detail": "resin.json",
+}
+
+# Rovnaky princip pre vysku vrstvy - mapuje nazov z objednavky (presne tak,
+# ako je v appke) na nazov exportovaneho process (nastavenie) profilu. Ak
+# pre danu vysku vrstvy este nemas exportovany profil, pouzije sa zalozny
+# "nastavenie.json" (0.20mm Standard).
+LAYER_HEIGHT_PROFILE_MAP = {
+    "Štandardná": "vrstva_020.json",
+    "Jemnejšia": "vrstva_012.json",
+    "Hrubšia": "vrstva_028.json",
 }
 
 POLL_INTERVAL_SECONDS = 30
@@ -150,7 +159,9 @@ def _post_slice_estimate(order_id: str, print_time_seconds: int, filament_grams:
         print(f"[rezanie] Nepodarilo sa ulozit odhad casu/filamentu appke: {exc}")
 
 
-def slice_via_docker(stl_path: Path, material_name: str = "", order_id: str = "") -> Path | None:
+def slice_via_docker(
+    stl_path: Path, material_name: str = "", order_id: str = "", layer_height_label: str = ""
+) -> Path | None:
     """
     Posle model na Docker "sidecar" nastroj na spravne narezanie (s
     fungujucimi AMS instrukciami). Vrati cestu k narezanemu .3mf suboru, ak
@@ -166,7 +177,16 @@ def slice_via_docker(stl_path: Path, material_name: str = "", order_id: str = ""
         return None
 
     printer_profile = SLICER_PROFILES_DIR / "tlaciaren.json"
-    process_profile = SLICER_PROFILES_DIR / "nastavenie.json"
+
+    wanted_process_name = LAYER_HEIGHT_PROFILE_MAP.get(layer_height_label, "nastavenie.json")
+    process_profile = SLICER_PROFILES_DIR / wanted_process_name
+    if not process_profile.exists():
+        fallback_process = SLICER_PROFILES_DIR / "nastavenie.json"
+        print(
+            f"[rezanie] UPOZORNENIE: chyba profil '{wanted_process_name}' pre vysku vrstvy "
+            f"'{layer_height_label}' - pouzivam zalozny '{fallback_process.name}' (0.20mm Standard)."
+        )
+        process_profile = fallback_process
 
     wanted_filament_name = MATERIAL_PROFILE_MAP.get(material_name, "filament.json")
     filament_profile = SLICER_PROFILES_DIR / wanted_filament_name
@@ -307,7 +327,12 @@ def process_order_queue() -> None:
                 # Docker sidecar (spravne AMS instrukcie). Ak sa nepodari
                 # (sidecar nebezi, chybaju profily...), padneme spat na
                 # povodne spravanie - otvorenie nenarezaneho modelu.
-                sliced_path = slice_via_docker(local_path, order.get("material_name", ""), order_id)
+                sliced_path = slice_via_docker(
+                    local_path,
+                    order.get("material_name", ""),
+                    order_id,
+                    order.get("layer_height_label", ""),
+                )
                 if sliced_path:
                     open_in_bambu_studio(sliced_path)
                     print(f"[bambu] Otvorene UZ NAREZANE v Bambu Studio -> {sliced_path.name}")
