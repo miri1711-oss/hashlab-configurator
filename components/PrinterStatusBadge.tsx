@@ -56,59 +56,63 @@ export default function PrinterStatusBadge() {
     };
   }, []);
 
-  if (!printers || printers.length === 0) return null;
+  const hasStock = stock && stock.filter((row) => row.quantity_grams > 0).length > 0;
+  const hasPrinters = printers && printers.length > 0;
+
+  if (!hasPrinters && !hasStock) return null;
 
   return (
     <div className="flex flex-col gap-2">
-      {printers.map((printer) => {
-        const amsSlots: AmsSlot[] = printer.ams_slots_json ? JSON.parse(printer.ams_slots_json) : [];
-        const isUnknown = printer.is_stale;
-        const isPrinting = !isUnknown && printer.is_printing;
+      {hasPrinters &&
+        printers!.map((printer) => {
+          const amsSlots: AmsSlot[] = printer.ams_slots_json ? JSON.parse(printer.ams_slots_json) : [];
+          const isUnknown = printer.is_stale;
+          const isPrinting = !isUnknown && printer.is_printing;
 
-        return (
-          <div
-            key={printer.id}
-            className="flex flex-wrap items-center gap-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3.5 py-2.5 text-xs"
-          >
-            <span
-              className={`h-2 w-2 shrink-0 rounded-full ${
-                isUnknown ? "bg-gray-300" : isPrinting ? "bg-amber-500" : "bg-emerald-500"
-              }`}
-            />
-            <span className="font-semibold text-[var(--text-1)]">
-              {isUnknown
-                ? "Stav tlačiarne momentálne neznámy"
-                : isPrinting
-                  ? `Tlačiareň práve tlačí${printer.progress_percent != null ? ` (${printer.progress_percent} %)` : ""}`
-                  : "Tlačiareň voľná, môžete objednať"}
-            </span>
+          return (
+            <div
+              key={printer.id}
+              className="flex flex-wrap items-center gap-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3.5 py-2.5 text-xs"
+            >
+              <span
+                className={`h-2 w-2 shrink-0 rounded-full ${
+                  isUnknown ? "bg-gray-300" : isPrinting ? "bg-amber-500" : "bg-emerald-500"
+                }`}
+              />
+              <span className="font-semibold text-[var(--text-1)]">
+                {isUnknown
+                  ? "Stav tlačiarne momentálne neznámy"
+                  : isPrinting
+                    ? `Tlačiareň práve tlačí${printer.progress_percent != null ? ` (${printer.progress_percent} %)` : ""}`
+                    : "Tlačiareň voľná, môžete objednať"}
+              </span>
 
-            {!isUnknown && amsSlots.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-[var(--text-3)]">· Momentálne založené:</span>
-                {amsSlots.map((slot) => (
-                  <span
-                    key={slot.slot}
-                    className="flex items-center gap-1 rounded-full bg-[var(--surface-2)] px-2 py-0.5"
-                    title={`Slot ${slot.slot}${slot.remainingPercent != null ? ` - ${slot.remainingPercent}% zostáva` : ""}`}
-                  >
+              {!isUnknown && amsSlots.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-[var(--text-3)]">· Momentálne založené:</span>
+                  {amsSlots.map((slot) => (
                     <span
-                      className="h-2.5 w-2.5 rounded-full border border-black/10"
-                      style={{ background: slot.colorHex }}
-                    />
-                    {slot.materialType}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-        );
-      })}
+                      key={slot.slot}
+                      className="flex items-center gap-1 rounded-full bg-[var(--surface-2)] px-2 py-0.5"
+                      title={`Slot ${slot.slot}${slot.remainingPercent != null ? ` - ${slot.remainingPercent}% zostáva` : ""}`}
+                    >
+                      <span
+                        className="h-2.5 w-2.5 rounded-full border border-black/10"
+                        style={{ background: slot.colorHex }}
+                      />
+                      {slot.materialType}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
 
-      {stock && stock.filter((row) => row.quantity_grams > 0).length > 0 && (
+      {hasStock && (
         <div className="flex flex-wrap items-center gap-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3.5 py-2.5 text-xs">
           <span className="font-semibold text-[var(--text-1)]">Skladom:</span>
-          {stock
+          {stock!
             .filter((row) => row.quantity_grams > 0)
             .map((row) => (
               <span
