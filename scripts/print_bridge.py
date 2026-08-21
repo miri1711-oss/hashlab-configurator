@@ -134,7 +134,23 @@ def safe_filename_part(text: str) -> str:
     return "".join(c if c.isalnum() or c in keep else "_" for c in text).strip()
 
 
-def slice_via_docker(stl_path: Path, material_name: str = "") -> Path | None:
+def _post_slice_estimate(order_id: str, print_time_seconds: int, filament_grams: float) -> None:
+    try:
+        payload = json.dumps(
+            {"orderId": order_id, "printTimeSeconds": print_time_seconds, "filamentGrams": filament_grams}
+        ).encode("utf-8")
+        req = urllib.request.Request(
+            f"{SITE_URL}/api/slice-estimate?key={ORDERS_VIEW_KEY}",
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        urllib.request.urlopen(req, timeout=10)
+    except Exception as exc:  # noqa: BLE001
+        print(f"[rezanie] Nepodarilo sa ulozit odhad casu/filamentu appke: {exc}")
+
+
+def slice_via_docker(stl_path: Path, material_name: str = "", order_id: str = "") -> Path | None:
     """
     Posle model na Docker "sidecar" nastroj na spravne narezanie (s
     fungujucimi AMS instrukciami). Vrati cestu k narezanemu .3mf suboru, ak
@@ -191,6 +207,8 @@ def slice_via_docker(stl_path: Path, material_name: str = "") -> Path | None:
             f"[rezanie] OK -> {sliced_path.name}"
             + (f"  (cas tlace: ~{int(print_time_s)//60} min, filament: {filament_g} g)" if print_time_s else "")
         )
+        if order_id and print_time_s and filament_g:
+            _post_slice_estimate(order_id, int(float(print_time_s)), float(filament_g))
         return sliced_path
     except Exception as exc:  # noqa: BLE001
         print(f"[rezanie] Chyba pri volani rezacieho nastroja: {exc}")
@@ -289,7 +307,7 @@ def process_order_queue() -> None:
                 # Docker sidecar (spravne AMS instrukcie). Ak sa nepodari
                 # (sidecar nebezi, chybaju profily...), padneme spat na
                 # povodne spravanie - otvorenie nenarezaneho modelu.
-                sliced_path = slice_via_docker(local_path, order.get("material_name", ""))
+                sliced_path = slice_via_docker(local_path, order.get("material_name", ""), order_id)
                 if sliced_path:
                     open_in_bambu_studio(sliced_path)
                     print(f"[bambu] Otvorene UZ NAREZANE v Bambu Studio -> {sliced_path.name}")
