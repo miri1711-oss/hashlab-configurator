@@ -16,7 +16,7 @@ import CheckoutFlow from "@/components/CheckoutFlow";
 import PaintPanel from "@/components/PaintPanel";
 import { COLORS, COLOR_HEX, INFILL_OPTIONS, LAYER_HEIGHTS,
   LAYER_HEIGHTS_SLA, MATERIALS } from "@/lib/constants";
-import { calculateTotalPrice, estimateDeliveryDate, estimateDimensions, formatEuro } from "@/lib/pricing";
+import { calculateTotalPrice, estimateDeliveryDate, estimateDimensions, formatEuro, exceedsSlaMaxSize } from "@/lib/pricing";
 import { ConfiguratorState, ModelDimensions } from "@/lib/types";
 
 const INITIAL_STATE: ConfiguratorState = {
@@ -168,6 +168,22 @@ export default function Home() {
                   selectedId={state.materialId}
                   onSelect={(materialId) => setState((prev) => ({ ...prev, materialId }))}
                 />
+
+                {state.materialId === "detail" && (
+                  <div className="rounded-xl border border-purple-200 bg-purple-50 p-3 text-xs text-purple-800">
+                    <p className="font-semibold">Živicová (SLA) tlač</p>
+                    <p className="mt-0.5">
+                      Živicové modely potrebujú po vytlačení umytie a UV vytvrdenie - počítaj s o niečo
+                      dlhším časom spracovania.
+                    </p>
+                    {exceedsSlaMaxSize(state.dimensions) && (
+                      <p className="mt-1.5 font-semibold text-red-700">
+                        ⚠️ Tento model je pravdepodobne príliš veľký pre našu živicovú tlačiareň -
+                        kontaktuj nás pred objednaním, prosím.
+                      </p>
+                    )}
+                  </div>
+                )}
                 <ColorPanel
                   selectedId={state.colorId}
                   onSelect={(colorId) => setState((prev) => ({ ...prev, colorId }))}

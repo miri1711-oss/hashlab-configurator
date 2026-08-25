@@ -96,3 +96,13 @@ export const VAT_MULTIPLIER = 1.2;
 export const QUANTITY_DISCOUNT_THRESHOLD = 5;
 export const QUANTITY_DISCOUNT_MULTIPLIER = 0.95;
 export const DELIVERY_DAYS_FROM_NOW = 4;
+
+// Ziviva (SLA) potrebuje viac materialu navyse na podpery + cistenie/UV
+// vytvrdenie po tlaci - prirazka k cene, aby to pokrylo extra pracu a
+// odpad materialu.
+export const RESIN_SUPPORT_SURCHARGE_MULTIPLIER = 1.2; // +20%
+
+// Priblizna max. tlacova plocha SLA/zivicovej tlaciarne (mm) - uprav podla
+// presneho modelu, ked bude znamy. Toto je bezny rozmer pre mensie
+// stolove zivicove tlaciarne.
+export const SLA_MAX_DIMENSIONS_MM = { x: 190, y: 120, z: 200 };

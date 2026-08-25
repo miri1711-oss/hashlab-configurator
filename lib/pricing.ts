@@ -4,6 +4,8 @@ import {
   QUANTITY_DISCOUNT_THRESHOLD,
   VAT_MULTIPLIER,
   DELIVERY_DAYS_FROM_NOW,
+  RESIN_SUPPORT_SURCHARGE_MULTIPLIER,
+  SLA_MAX_DIMENSIONS_MM,
 } from "./constants";
 import { InfillOption, MaterialOption, ModelDimensions } from "./types";
 
@@ -29,6 +31,10 @@ export function calculateTotalPrice(
   if (!dimensions) return 0;
 
   let unitPrice = dimensions.volumeCm3 * material.pricePerCm3 * infill.multiplier;
+  if (material.id === "detail") {
+    // Zivica (SLA) - prirazka za podpery a extra spracovanie po tlaci.
+    unitPrice *= RESIN_SUPPORT_SURCHARGE_MULTIPLIER;
+  }
   unitPrice = Math.max(unitPrice, MIN_ORDER_PRICE);
 
   let subtotal = unitPrice * quantity;
@@ -52,4 +58,17 @@ export function estimateDeliveryDate(): string {
   const d = new Date();
   d.setDate(d.getDate() + DELIVERY_DAYS_FROM_NOW);
   return d.toLocaleDateString("sk-SK", { day: "numeric", month: "long" });
+}
+
+/**
+ * Overi, ci model presahuje maximalnu tlacovu plochu SLA/zivicovej
+ * tlaciarne. Vracia true, ak je model prilis velky.
+ */
+export function exceedsSlaMaxSize(dimensions: ModelDimensions | null): boolean {
+  if (!dimensions) return false;
+  return (
+    dimensions.x > SLA_MAX_DIMENSIONS_MM.x ||
+    dimensions.y > SLA_MAX_DIMENSIONS_MM.y ||
+    dimensions.z > SLA_MAX_DIMENSIONS_MM.z
+  );
 }
