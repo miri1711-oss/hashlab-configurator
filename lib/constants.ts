@@ -106,3 +106,40 @@ export const RESIN_SUPPORT_SURCHARGE_MULTIPLIER = 1.2; // +20%
 // presneho modelu, ked bude znamy. Toto je bezny rozmer pre mensie
 // stolove zivicove tlaciarne.
 export const SLA_MAX_DIMENSIONS_MM = { x: 190, y: 120, z: 200 };
+
+export interface ResinTypeOption {
+  id: string;
+  name: string;
+  description: string;
+  priceMultiplier: number;
+}
+
+// Typy zivice na vyber - zobrazuje sa len ked je zvoleny material
+// "Ultra Detail" (id: "detail"). priceMultiplier nasobi zakladnu cenu
+// materialu (Ultra Detail uz ma svoju vlastnu cenu za cm3 + prirazku).
+export const RESIN_TYPES: ResinTypeOption[] = [
+  {
+    id: "standard",
+    name: "Štandardná",
+    description: "Bežné modely, dobrý pomer ceny a kvality",
+    priceMultiplier: 1,
+  },
+  {
+    id: "tough",
+    name: "Odolná",
+    description: "Vyššia pevnosť, mechanicky namáhané diely",
+    priceMultiplier: 1.25,
+  },
+  {
+    id: "flexible",
+    name: "Pružná",
+    description: "Ohybné, nárazuvzdorné diely",
+    priceMultiplier: 1.35,
+  },
+  {
+    id: "clear",
+    name: "Priehľadná",
+    description: "Priesvitné modely, dekoratívne účely",
+    priceMultiplier: 1.3,
+  },
+];

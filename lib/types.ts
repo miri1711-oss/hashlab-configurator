@@ -45,6 +45,7 @@ export interface ConfiguratorState {
   fileName: string | null;
   dimensions: ModelDimensions | null;
   materialId: MaterialId;
+  resinTypeId: string;
   colorId: string;
   infillId: InfillId;
   layerHeightId: LayerHeightId;

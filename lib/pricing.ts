@@ -26,14 +26,16 @@ export function calculateTotalPrice(
   dimensions: ModelDimensions | null,
   material: MaterialOption,
   infill: InfillOption,
-  quantity: number
+  quantity: number,
+  resinPriceMultiplier: number = 1
 ): number {
   if (!dimensions) return 0;
 
   let unitPrice = dimensions.volumeCm3 * material.pricePerCm3 * infill.multiplier;
   if (material.id === "detail") {
-    // Zivica (SLA) - prirazka za podpery a extra spracovanie po tlaci.
-    unitPrice *= RESIN_SUPPORT_SURCHARGE_MULTIPLIER;
+    // Zivica (SLA) - prirazka za podpery a extra spracovanie po tlaci,
+    // plus nasobok podla zvoleneho typu zivice (standardna/odolna/...).
+    unitPrice *= RESIN_SUPPORT_SURCHARGE_MULTIPLIER * resinPriceMultiplier;
   }
   unitPrice = Math.max(unitPrice, MIN_ORDER_PRICE);
 

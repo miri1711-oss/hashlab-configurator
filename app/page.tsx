@@ -7,6 +7,7 @@ import ModelViewer, { ModelViewerHandle } from "@/components/ModelViewer";
 import PrinterStatusBadge from "@/components/PrinterStatusBadge";
 import InfoPanel from "@/components/InfoPanel";
 import MaterialPanel from "@/components/MaterialPanel";
+import ResinTypePanel from "@/components/ResinTypePanel";
 import ColorPanel from "@/components/ColorPanel";
 import InfillPanel from "@/components/InfillPanel";
 import LayerHeightPanel from "@/components/LayerHeightPanel";
@@ -15,7 +16,7 @@ import CheckoutFooter from "@/components/CheckoutFooter";
 import CheckoutFlow from "@/components/CheckoutFlow";
 import PaintPanel from "@/components/PaintPanel";
 import { COLORS, COLOR_HEX, INFILL_OPTIONS, LAYER_HEIGHTS,
-  LAYER_HEIGHTS_SLA, MATERIALS } from "@/lib/constants";
+  LAYER_HEIGHTS_SLA, MATERIALS , RESIN_TYPES } from "@/lib/constants";
 import { calculateTotalPrice, estimateDeliveryDate, estimateDimensions, formatEuro, exceedsSlaMaxSize } from "@/lib/pricing";
 import { ConfiguratorState, ModelDimensions } from "@/lib/types";
 
@@ -23,6 +24,7 @@ const INITIAL_STATE: ConfiguratorState = {
   fileName: null,
   dimensions: null,
   materialId: "standard",
+  resinTypeId: "standard",
   colorId: "antracitova",
   infillId: "light",
   layerHeightId: "standard",
@@ -49,9 +51,12 @@ export default function Home() {
   const activeLayerHeights = state.materialId === "detail" ? LAYER_HEIGHTS_SLA : LAYER_HEIGHTS;
   const layerHeight = activeLayerHeights.find((l) => l.id === state.layerHeightId) ?? activeLayerHeights[1];
 
+  const resinType = RESIN_TYPES.find((r) => r.id === state.resinTypeId);
+  const resinPriceMultiplier = state.materialId === "detail" ? (resinType?.priceMultiplier ?? 1) : 1;
+
   const totalPrice = useMemo(
-    () => calculateTotalPrice(state.dimensions, material, infill, state.quantity),
-    [state.dimensions, material, infill, state.quantity]
+    () => calculateTotalPrice(state.dimensions, material, infill, state.quantity, resinPriceMultiplier),
+    [state.dimensions, material, infill, state.quantity, resinPriceMultiplier]
   );
 
   function handleFileSelected(file: File) {
@@ -173,8 +178,12 @@ export default function Home() {
                   <div className="rounded-xl border border-purple-200 bg-purple-50 p-3 text-xs text-purple-800">
                     <p className="font-semibold">Živicová (SLA) tlač</p>
                     <p className="mt-0.5">
-                      Živicové modely potrebujú po vytlačení umytie a UV vytvrdenie - počítaj s o niečo
-                      dlhším časom spracovania.
+                      Živicové modely potrebujú po vytlačení umytie v izopropylalkohole a UV vytvrdenie -
+                      počítaj s cca 1-2 dňami navyše oproti bežnej tlači.
+                    </p>
+                    <p className="mt-1.5 text-purple-700">
+                      ⚗️ Živica je pred vytvrdením dráždivá chemikália - pri osobnom odbere odporúčame
+                      opatrnú manipuláciu a umytie rúk po kontakte s nevytvrdeným modelom.
                     </p>
                     {exceedsSlaMaxSize(state.dimensions) && (
                       <p className="mt-1.5 font-semibold text-red-700">
@@ -183,6 +192,13 @@ export default function Home() {
                       </p>
                     )}
                   </div>
+                )}
+
+                {state.materialId === "detail" && (
+                  <ResinTypePanel
+                    selectedId={state.resinTypeId}
+                    onSelect={(resinTypeId) => setState((prev) => ({ ...prev, resinTypeId }))}
+                  />
                 )}
                 <ColorPanel
                   selectedId={state.colorId}
