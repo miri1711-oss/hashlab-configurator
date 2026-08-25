@@ -23,6 +23,12 @@ const MATERIAL_ICONS: Record<MaterialId, JSX.Element> = {
     </>
   ),
   flex: <path d="M3 12c2-4 4-4 6 0s4 4 6 0 4-4 6 0" stroke="#2563eb" strokeWidth={1.6} strokeLinecap="round" />,
+  detail: (
+    <>
+      <path d="M6 3h12l3 6-9 12L3 9l3-6Z" stroke="#2563eb" strokeWidth={1.6} strokeLinejoin="round" />
+      <path d="M3 9h18M9 3l3 18M15 3l-3 18" stroke="#2563eb" strokeWidth={1.6} />
+    </>
+  ),
 };
 
 export default function MaterialPanel({ selectedId, onSelect }: MaterialPanelProps) {

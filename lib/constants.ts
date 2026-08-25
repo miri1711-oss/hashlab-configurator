@@ -25,6 +25,12 @@ export const MATERIALS: MaterialOption[] = [
     description: "TPU · ohybné a nárazuvzdorné diely",
     pricePerCm3: 0.13,
   },
+  {
+    id: "detail",
+    name: "Ultra Detail",
+    description: "Resin · vysoká presnosť a hladkosť (SLA tlačiareň)",
+    pricePerCm3: 0.18,
+  },
 ];
 
 export const COLORS: ColorOption[] = [

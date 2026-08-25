@@ -159,8 +159,29 @@ def _post_slice_estimate(order_id: str, print_time_seconds: int, filament_grams:
         print(f"[rezanie] Nepodarilo sa ulozit odhad casu/filamentu appke: {exc}")
 
 
+def _deduct_filament_stock(material_name: str, color_label: str, grams: float) -> None:
+    try:
+        payload = json.dumps(
+            {"materialName": material_name, "colorLabel": color_label, "grams": grams}
+        ).encode("utf-8")
+        req = urllib.request.Request(
+            f"{SITE_URL}/api/filament-stock/deduct?key={ORDERS_VIEW_KEY}",
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        urllib.request.urlopen(req, timeout=10)
+        print(f"[sklad] Odpocitane {grams:.1f} g ({material_name}, {color_label}) zo skladu.")
+    except Exception as exc:  # noqa: BLE001
+        print(f"[sklad] Nepodarilo sa odpocitat sklad filamentu: {exc}")
+
+
 def slice_via_docker(
-    stl_path: Path, material_name: str = "", order_id: str = "", layer_height_label: str = ""
+    stl_path: Path,
+    material_name: str = "",
+    order_id: str = "",
+    layer_height_label: str = "",
+    color_label: str = "",
 ) -> Path | None:
     """
     Posle model na Docker "sidecar" nastroj na spravne narezanie (s
@@ -229,6 +250,8 @@ def slice_via_docker(
         )
         if order_id and print_time_s and filament_g:
             _post_slice_estimate(order_id, int(float(print_time_s)), float(filament_g))
+        if material_name and color_label and filament_g:
+            _deduct_filament_stock(material_name, color_label, float(filament_g))
         return sliced_path
     except Exception as exc:  # noqa: BLE001
         print(f"[rezanie] Chyba pri volani rezacieho nastroja: {exc}")
@@ -332,6 +355,7 @@ def process_order_queue() -> None:
                     order.get("material_name", ""),
                     order_id,
                     order.get("layer_height_label", ""),
+                    order.get("color_label", ""),
                 )
                 if sliced_path:
                     open_in_bambu_studio(sliced_path)
