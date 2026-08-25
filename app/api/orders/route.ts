@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
         quantity,
         totalPrice,
         shippingMethod,
+        isResin: materialName === "Ultra Detail",
       });
 
       // Pri "Packeta domov" a dobierke sa da zasielka vytvorit hned, rovnakym

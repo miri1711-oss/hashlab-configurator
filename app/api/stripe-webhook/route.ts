@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
             quantity: order.quantity,
             totalPrice: Number(order.total_price),
             shippingMethod: order.shipping_method,
+            isResin: order.material_name === "Ultra Detail",
           });
 
           // Platba kartou je uz potvrdena Stripe - az teraz je bezpecne

@@ -9,6 +9,7 @@ export interface OrderConfirmationData {
   quantity: number;
   totalPrice: number;
   shippingMethod: string;
+  isResin?: boolean;
 }
 
 const SHIPPING_LABELS: Record<string, string> = {
@@ -64,6 +65,9 @@ function buildHtmlEmail(order: OrderConfirmationData, shippingLabel: string): st
             <td style="padding-top:16px;color:#2563eb;font-size:24px;font-weight:700;text-align:right;">${order.totalPrice.toFixed(2)} €</td>
           </tr>
         </table>
+        ${order.isResin ? `<p style="margin:16px 0 0;padding:12px;background:#faf5ff;border-radius:10px;color:#6b21a8;font-size:13px;line-height:1.5;">
+          ⏱️ Živicové modely potrebujú po vytlačení umytie a UV vytvrdenie - počítaj s cca 1-2 dňami navyše.
+        </p>` : ""}
         <p style="margin:24px 0 0;color:#5b6b85;font-size:13px;line-height:1.5;">
           Ozveme sa vám, akonáhle bude objednávka pripravená na odoslanie/vyzdvihnutie.
         </p>
@@ -116,6 +120,10 @@ export async function sendOrderConfirmationEmail(order: OrderConfirmationData): 
           `Počet kusov: ${order.quantity}`,
           `Doprava: ${shippingLabel}`,
           `Celková cena: ${order.totalPrice.toFixed(2)} €`,
+          "",
+          ...(order.isResin
+            ? ["", "Živicové modely potrebujú po vytlačení umytie a UV vytvrdenie - počítaj s cca 1-2 dňami navyše."]
+            : []),
           "",
           "Ozveme sa vám, akonáhle bude objednávka pripravená na odoslanie/vyzdvihnutie.",
           "",
