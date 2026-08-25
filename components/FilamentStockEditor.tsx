@@ -9,12 +9,15 @@ interface StockRow {
   quantity_grams: number;
 }
 
+const LOW_STOCK_THRESHOLD = 100;
+
 export default function FilamentStockEditor({ initialStock }: { initialStock: StockRow[] }) {
   const [stock, setStock] = useState(initialStock);
   const [material, setMaterial] = useState(MATERIALS[0]?.name ?? "");
   const [color, setColor] = useState(COLORS[0]?.label ?? "");
   const [grams, setGrams] = useState("");
   const [saving, setSaving] = useState(false);
+  const [removing, setRemoving] = useState<string | null>(null);
 
   function currentQuantity(materialName: string, colorLabel: string): number {
     const row = stock.find((s) => s.material_name === materialName && s.color_label === colorLabel);
@@ -45,12 +48,30 @@ export default function FilamentStockEditor({ initialStock }: { initialStock: St
     }
   }
 
+  async function handleRemove(materialName: string, colorLabel: string) {
+    const key = `${materialName}|${colorLabel}`;
+    setRemoving(key);
+    try {
+      const response = await fetch("/api/filament-stock/remove", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ materialName, colorLabel }),
+      });
+      if (response.ok) {
+        setStock((prev) => prev.filter((s) => !(s.material_name === materialName && s.color_label === colorLabel)));
+      }
+    } finally {
+      setRemoving(null);
+    }
+  }
+
   return (
     <div className="card rounded-2xl p-5 sm:p-6">
       <p className="display mb-1 text-base font-bold text-[var(--text-1)]">Sklad filamentov</p>
       <p className="mb-4 text-xs text-[var(--text-3)]">
         Množstvo sa automaticky odpočítava po každej automaticky narezanej tlači. Sem zadaj presné
-        množstvo, čo aktuálne máš (napr. po dokúpení novej cievky).
+        množstvo, čo aktuálne máš (napr. po dokúpení novej cievky). Riadky pod {LOW_STOCK_THRESHOLD} g
+        sú zvýraznené červeno - treba dokúpiť.
       </p>
 
       <form onSubmit={handleSave} className="mb-5 flex flex-wrap items-end gap-2">
@@ -105,18 +126,33 @@ export default function FilamentStockEditor({ initialStock }: { initialStock: St
               <th className="py-2">Materiál</th>
               <th className="py-2">Farba</th>
               <th className="py-2">Skladom</th>
+              <th className="py-2"></th>
             </tr>
           </thead>
           <tbody>
-            {stock.map((row) => (
-              <tr key={`${row.material_name}|${row.color_label}`} className="border-b border-[var(--border)] last:border-0">
-                <td className="py-2">{row.material_name}</td>
-                <td className="py-2">{row.color_label}</td>
-                <td className={`py-2 font-semibold ${row.quantity_grams < 100 ? "text-red-600" : "text-[var(--text-1)]"}`}>
-                  {row.quantity_grams.toFixed(0)} g
-                </td>
-              </tr>
-            ))}
+            {stock.map((row) => {
+              const key = `${row.material_name}|${row.color_label}`;
+              const isLow = row.quantity_grams < LOW_STOCK_THRESHOLD;
+              return (
+                <tr key={key} className="border-b border-[var(--border)] last:border-0">
+                  <td className="py-2">{row.material_name}</td>
+                  <td className="py-2">{row.color_label}</td>
+                  <td className={`py-2 font-semibold ${isLow ? "text-red-600" : "text-[var(--text-1)]"}`}>
+                    {isLow && "⚠️ "}
+                    {row.quantity_grams.toFixed(0)} g
+                  </td>
+                  <td className="py-2 text-right">
+                    <button
+                      onClick={() => handleRemove(row.material_name, row.color_label)}
+                      disabled={removing === key}
+                      className="text-xs font-semibold text-red-600 hover:underline disabled:opacity-50"
+                    >
+                      {removing === key ? "Mažem…" : "Vymazať"}
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       )}
