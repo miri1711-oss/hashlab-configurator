@@ -5,6 +5,8 @@ import { listOrders, listFilamentStock } from "@/lib/db";
 import LogoutButton from "@/components/LogoutButton";
 import PrintStatusButton from "@/components/PrintStatusButton";
 import FilamentStockEditor from "@/components/FilamentStockEditor";
+import ManualPrinterSwitch from "@/components/ManualPrinterSwitch";
+import { listPrinterStatuses } from "@/lib/db";
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   cod: { label: "Dobierka", color: "bg-sky-50 text-sky-700" },
@@ -29,6 +31,14 @@ export default async function AdminPage() {
 
   const orders = await listOrders();
   const filamentStock = await listFilamentStock();
+  const allPrinters = await listPrinterStatuses();
+  const slaPrinters = [
+    { id: "sla_creality", label: "Creality (SLA)" },
+    { id: "sla_phrozen", label: "Phrozen (SLA)" },
+  ].map((p) => {
+    const existing = allPrinters.find((row) => row.id === p.id);
+    return { ...p, is_printing: existing ? Boolean(existing.is_printing) : false };
+  });
 
   return (
     <div className="min-h-screen bg-[var(--surface-2)] px-4 py-8 sm:px-6">
@@ -39,6 +49,10 @@ export default async function AdminPage() {
             <p className="text-sm text-[var(--text-3)]">Spolu {orders.length} (posledných 200)</p>
           </div>
           <LogoutButton />
+        </div>
+
+        <div className="mb-6">
+          <ManualPrinterSwitch initialPrinters={slaPrinters} />
         </div>
 
         <div className="mb-6">
