@@ -73,6 +73,18 @@ export const LAYER_HEIGHTS: LayerHeightOption[] = [
   { id: "fine", label: "Jemnejšia", mm: 0.12, description: "Hladší povrch, dlhšia tlač" },
 ];
 
+export const LAYER_HEIGHTS_SLA: LayerHeightOption[] = [
+  { id: "draft", label: "Rýchlejšia", mm: 0.1, description: "Väčšie diely, kratší čas tlače" },
+  {
+    id: "standard",
+    label: "Štandardná",
+    mm: 0.05,
+    description: "Bežne používaná hodnota - dobrý pomer rýchlosti a kvality",
+    recommended: true,
+  },
+  { id: "fine", label: "Ultra jemná", mm: 0.03, description: "Šperky, miniatúrky, maximálny detail" },
+];
+
 export const STEP_LABELS: Record<1 | 2 | 3, string> = {
   1: "Nahrať",
   2: "Konfigurácia",

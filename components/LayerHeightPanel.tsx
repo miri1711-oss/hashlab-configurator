@@ -1,12 +1,14 @@
 import { LAYER_HEIGHTS } from "@/lib/constants";
-import { LayerHeightId } from "@/lib/types";
+import { LayerHeightId, LayerHeightOption } from "@/lib/types";
 
 interface LayerHeightPanelProps {
   selectedId: LayerHeightId;
   onSelect: (id: LayerHeightId) => void;
+  options?: LayerHeightOption[];
 }
 
-export default function LayerHeightPanel({ selectedId, onSelect }: LayerHeightPanelProps) {
+export default function LayerHeightPanel({ selectedId, onSelect, options }: LayerHeightPanelProps) {
+  const layerHeightOptions = options ?? LAYER_HEIGHTS;
   return (
     <div className="card relative rounded-2xl p-4 sm:p-5">
       <svg
@@ -24,7 +26,7 @@ export default function LayerHeightPanel({ selectedId, onSelect }: LayerHeightPa
       </p>
 
       <div className="relative grid grid-cols-1 gap-2 sm:grid-cols-3">
-        {LAYER_HEIGHTS.map((option) => (
+        {layerHeightOptions.map((option) => (
           <button
             key={option.id}
             onClick={() => onSelect(option.id)}

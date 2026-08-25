@@ -14,7 +14,8 @@ import QuantityPanel from "@/components/QuantityPanel";
 import CheckoutFooter from "@/components/CheckoutFooter";
 import CheckoutFlow from "@/components/CheckoutFlow";
 import PaintPanel from "@/components/PaintPanel";
-import { COLORS, COLOR_HEX, INFILL_OPTIONS, LAYER_HEIGHTS, MATERIALS } from "@/lib/constants";
+import { COLORS, COLOR_HEX, INFILL_OPTIONS, LAYER_HEIGHTS,
+  LAYER_HEIGHTS_SLA, MATERIALS } from "@/lib/constants";
 import { calculateTotalPrice, estimateDeliveryDate, estimateDimensions, formatEuro } from "@/lib/pricing";
 import { ConfiguratorState, ModelDimensions } from "@/lib/types";
 
@@ -45,7 +46,8 @@ export default function Home() {
 
   const material = MATERIALS.find((m) => m.id === state.materialId)!;
   const infill = INFILL_OPTIONS.find((i) => i.id === state.infillId)!;
-  const layerHeight = LAYER_HEIGHTS.find((l) => l.id === state.layerHeightId)!;
+  const activeLayerHeights = state.materialId === "detail" ? LAYER_HEIGHTS_SLA : LAYER_HEIGHTS;
+  const layerHeight = activeLayerHeights.find((l) => l.id === state.layerHeightId) ?? activeLayerHeights[1];
 
   const totalPrice = useMemo(
     () => calculateTotalPrice(state.dimensions, material, infill, state.quantity),
@@ -187,6 +189,7 @@ export default function Home() {
                 <LayerHeightPanel
                   selectedId={state.layerHeightId}
                   onSelect={(layerHeightId) => setState((prev) => ({ ...prev, layerHeightId }))}
+                  options={activeLayerHeights}
                 />
                 <QuantityPanel
                   quantity={state.quantity}
