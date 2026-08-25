@@ -181,10 +181,6 @@ export default function Home() {
                       Živicové modely potrebujú po vytlačení umytie v izopropylalkohole a UV vytvrdenie -
                       počítaj s cca 1-2 dňami navyše oproti bežnej tlači.
                     </p>
-                    <p className="mt-1.5 text-purple-700">
-                      ⚗️ Živica je pred vytvrdením dráždivá chemikália - pri osobnom odbere odporúčame
-                      opatrnú manipuláciu a umytie rúk po kontakte s nevytvrdeným modelom.
-                    </p>
                     {exceedsSlaMaxSize(state.dimensions) && (
                       <p className="mt-1.5 font-semibold text-red-700">
                         ⚠️ Tento model je pravdepodobne príliš veľký pre našu živicovú tlačiareň -
