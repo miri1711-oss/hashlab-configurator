@@ -1,4 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+
+// Nikdy neuklada tuto odpoved do medzipamate - vzdy nacita cerstve udaje
+// z databazy (inak by appka mohla zakaznikovi ukazovat stary/zastaraly stav).
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 import { upsertPrinterStatus, listPrinterStatuses, AmsSlot } from "@/lib/db";
 
 /**
