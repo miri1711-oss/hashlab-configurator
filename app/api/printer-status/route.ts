@@ -39,7 +39,15 @@ export async function GET() {
     const statuses = await listPrinterStatuses();
     const STALE_AFTER_MS = 5 * 60 * 1000; // 5 minut
 
+    // Rucne nastavene tlaciarne (SLA - Creality, Phrozen) nemaju ziadny
+    // automaticky "heartbeat", takze pre ne kontrolu starnutia
+    // preskocime - ich stav plati, kym ho niekto rucne nezmeni.
+    const MANUAL_PRINTER_IDS = ["sla_creality", "sla_phrozen"];
+
     const printers = statuses.map((row) => {
+      if (MANUAL_PRINTER_IDS.includes(row.id as string)) {
+        return { ...row, is_stale: false };
+      }
       const updatedAt = new Date(row.updated_at as string);
       const isStale = Date.now() - updatedAt.getTime() > STALE_AFTER_MS;
       return { ...row, is_stale: isStale };
