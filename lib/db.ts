@@ -327,3 +327,28 @@ export async function listPrintQueue() {
   `;
   return result.rows;
 }
+
+/**
+ * Spocita odhadovanu dlzku fronty (objednavky, co este neboli poslane na
+ * tlac). Pouziva slice_print_time_seconds - to mame ulozene len pre
+ * objednavky, co presli automatickym rezanim (nie vsetky, napr. malovane
+ * modely tento odhad nemaju) - preto vraciame aj pocet objednavok BEZ
+ * odhadu, nech admin vie, ze skutocna fronta moze byt dlhsia.
+ */
+export async function getPendingQueueEstimate() {
+  await ensureOrdersTable();
+  const result = await sql`
+    SELECT
+      COUNT(*) FILTER (WHERE slice_print_time_seconds IS NOT NULL) AS with_estimate,
+      COUNT(*) FILTER (WHERE slice_print_time_seconds IS NULL) AS without_estimate,
+      COALESCE(SUM(slice_print_time_seconds), 0) AS total_seconds
+    FROM orders
+    WHERE print_status = 'pending';
+  `;
+  const row = result.rows[0];
+  return {
+    withEstimate: Number(row.with_estimate),
+    withoutEstimate: Number(row.without_estimate),
+    totalSeconds: Number(row.total_seconds),
+  };
+}

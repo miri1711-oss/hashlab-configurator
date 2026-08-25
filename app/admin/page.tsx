@@ -6,6 +6,7 @@ import LogoutButton from "@/components/LogoutButton";
 import PrintStatusButton from "@/components/PrintStatusButton";
 import FilamentStockEditor from "@/components/FilamentStockEditor";
 import ManualPrinterSwitch from "@/components/ManualPrinterSwitch";
+import CapacityEstimate from "@/components/CapacityEstimate";
 import { listPrinterStatuses } from "@/lib/db";
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -49,6 +50,10 @@ export default async function AdminPage() {
             <p className="text-sm text-[var(--text-3)]">Spolu {orders.length} (posledných 200)</p>
           </div>
           <LogoutButton />
+        </div>
+
+        <div className="mb-6">
+          <CapacityEstimate />
         </div>
 
         <div className="mb-6">
