@@ -237,3 +237,25 @@ input[type="number"]::-webkit-inner-spin-button {
   background: #eef6fe;
   box-shadow: 0 0 0 1px var(--blue-2) inset;
 }
+
+/* Zmensenie ramcekov a medzier na malych obrazovkach (mobilne telefony) -
+   appka na pocitaci vyzera dobre, ale na uzsich obrazovkach posobia karty
+   zbytocne velke. */
+@media (max-width: 480px) {
+  .card {
+    border-radius: 14px !important;
+  }
+  .card.p-4,
+  .card.p-5,
+  .card.p-6,
+  .card.sm\:p-5,
+  .card.sm\:p-6 {
+    padding: 12px !important;
+  }
+  .display.text-2xl {
+    font-size: 1.35rem !important;
+  }
+  .display.text-xl {
+    font-size: 1.15rem !important;
+  }
+}

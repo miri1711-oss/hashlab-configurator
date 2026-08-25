@@ -226,12 +226,14 @@ export default function Home() {
               </section>
             </main>
 
-            <CheckoutFooter
-              priceLabel={formatEuro(totalPrice)}
-              deliveryLabel={deliveryLabel}
-              disabled={!state.dimensions}
-              onCheckout={handleCheckout}
-            />
+            {state.dimensions && (
+              <CheckoutFooter
+                priceLabel={formatEuro(totalPrice)}
+                deliveryLabel={deliveryLabel}
+                disabled={!state.dimensions}
+                onCheckout={handleCheckout}
+              />
+            )}
           </>
         ) : (
           <CheckoutFlow
