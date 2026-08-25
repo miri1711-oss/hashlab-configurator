@@ -54,7 +54,17 @@ export default function MaterialPanel({ selectedId, onSelect }: MaterialPanelPro
               <span className="accent-bar h-9 w-1 shrink-0 rounded-full" />
               <span className="relative flex flex-1 items-center justify-between">
                 <span>
-                  <span className="block text-sm font-semibold text-[var(--text-1)]">{material.name}</span>
+                  <span className="block text-sm font-semibold text-[var(--text-1)]">{material.name}
+                {material.id === "detail" && (
+                  <span className="ml-1.5 rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-purple-700">
+                    SLA
+                  </span>
+                )}
+                {material.id === "detail" && (
+                  <span className="ml-1.5 rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-purple-700">
+                    SLA
+                  </span>
+                )}</span>
                   <span className="block text-xs text-[var(--text-3)]">{material.description}</span>
                 </span>
                 <span className="mono ml-2 shrink-0 text-xs text-[var(--text-2)]">
