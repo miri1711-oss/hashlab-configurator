@@ -81,6 +81,7 @@ export default async function AdminPage() {
                 <th className="px-4 py-3">Platba</th>
                 <th className="px-4 py-3">Doprava</th>
                 <th className="px-4 py-3">Odhad tlače</th>
+                <th className="px-4 py-3">Poznámka</th>
                 <th className="px-4 py-3">Tlač</th>
                 <th className="px-4 py-3">Dátum</th>
               </tr>
@@ -132,6 +133,9 @@ export default async function AdminPage() {
                       ) : (
                         <span>—</span>
                       )}
+                    </td>
+                    <td className="px-4 py-3 max-w-[160px] truncate text-xs text-[var(--text-3)]" title={order.customer_note as string ?? ""}>
+                      {(order.customer_note as string) || "—"}
                     </td>
                     <td className="px-4 py-3">
                       <PrintStatusButton

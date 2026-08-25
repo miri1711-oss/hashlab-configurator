@@ -53,6 +53,7 @@ export default function CheckoutFlow({
   const [shipping, setShipping] = useState<ShippingMethod>("courier");
   const [payment, setPayment] = useState<PaymentMethod>("card");
   const [packetaPointName, setPacketaPointName] = useState("");
+  const [customerNote, setCustomerNote] = useState("");
   const [errors, setErrors] = useState<Partial<Record<keyof CustomerDetails, boolean>>>({});
   const [packetaError, setPacketaError] = useState(false);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
@@ -222,6 +223,7 @@ export default function CheckoutFlow({
       layerHeightLabel: summary.layerHeightLabel,
       quantity: summary.quantity,
       totalPrice: totalWithShipping,
+      customerNote: customerNote.trim() || null,
     };
 
     try {
@@ -465,6 +467,21 @@ export default function CheckoutFlow({
               Po kliknutí na "Záväzne objednať" budeš presmerovaný/á na bezpečnú platobnú stránku Stripe.
             </p>
           )}
+        </div>
+
+        <div className="card rounded-2xl p-4 sm:p-5">
+          <label htmlFor="customerNote" className="display mb-2 block text-sm font-bold text-[var(--text-1)]">
+            Poznámka k objednávke <span className="font-normal text-[var(--text-3)]">(nepovinné)</span>
+          </label>
+          <textarea
+            id="customerNote"
+            value={customerNote}
+            onChange={(e) => setCustomerNote(e.target.value)}
+            rows={3}
+            maxLength={500}
+            placeholder="Napr. špeciálne želanie, poznámka k farbe, termínu..."
+            className="field-input w-full resize-none"
+          />
         </div>
 
         <button

@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
     const city = String(body.city ?? "");
     const zip = String(body.zip ?? "");
     const shippingMethod = String(body.shippingMethod ?? "");
+    const customerNote = body.customerNote ? String(body.customerNote) : null;
 
     await insertOrder({
       id: orderId,
@@ -46,6 +47,7 @@ export async function POST(request: NextRequest) {
       quantity,
       totalPrice,
       status: paymentMethod === "card" ? "pending_payment" : "cod",
+      customerNote,
     });
 
     // Pri dobierke je objednávka rovno potvrdená (netreba čakať na platbu

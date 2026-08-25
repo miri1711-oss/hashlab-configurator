@@ -18,6 +18,7 @@ export interface OrderRecord {
   materialName: string;
   colorLabel: string;
   hasCustomPaint: boolean;
+  customerNote?: string | null;
   infillLabel: string;
   layerHeightLabel: string;
   quantity: number;
@@ -69,6 +70,7 @@ async function ensureOrdersTable() {
   await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS packeta_barcode TEXT;`;
   await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS slice_print_time_seconds INTEGER;`;
   await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS slice_filament_grams REAL;`;
+  await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_note TEXT;`;
   tableEnsured = true;
 }
 
@@ -150,13 +152,13 @@ export async function insertOrder(order: OrderRecord) {
       id, full_name, email, phone, street, city, zip,
       shipping_method, packeta_point_name, payment_method,
       file_name, model_file_url, paint_preview_url, colored_threemf_url, material_name, color_label, has_custom_paint,
-      infill_label, layer_height_label, quantity, total_price, status
+      infill_label, layer_height_label, quantity, total_price, status, customer_note
     ) VALUES (
       ${order.id}, ${order.fullName}, ${order.email}, ${order.phone},
       ${order.street}, ${order.city}, ${order.zip},
       ${order.shippingMethod}, ${order.packetaPointName}, ${order.paymentMethod},
       ${order.fileName}, ${order.modelFileUrl}, ${order.paintPreviewUrl}, ${order.coloredThreeMFUrl}, ${order.materialName}, ${order.colorLabel}, ${order.hasCustomPaint},
-      ${order.infillLabel}, ${order.layerHeightLabel}, ${order.quantity}, ${order.totalPrice}, ${order.status}
+      ${order.infillLabel}, ${order.layerHeightLabel}, ${order.quantity}, ${order.totalPrice}, ${order.status}, ${order.customerNote ?? null}
     )
     ON CONFLICT (id) DO NOTHING;
   `;
