@@ -301,7 +301,7 @@ const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function Mod
             <input
               ref={fileInputRef}
               type="file"
-              accept=".stl,.obj,.step,.stp"
+              accept=".stl,.obj,.step,.stp,.3mf"
               className="hidden"
               onChange={(e) => {
                 const selected = e.target.files?.[0];

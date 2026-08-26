@@ -5,6 +5,7 @@ export interface MaterialOption {
   name: string;
   description: string;
   pricePerCm3: number;
+  traits?: string[];
 }
 
 export type InfillId = "light" | "standard" | "strong";

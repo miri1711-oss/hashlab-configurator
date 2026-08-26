@@ -6,30 +6,35 @@ export const MATERIALS: MaterialOption[] = [
     name: "Štandardný plast",
     description: "PLA · bežné modely a prototypy",
     pricePerCm3: 0.06,
+    traits: ["Ľahká tlač", "Dobrý povrch"],
   },
   {
     id: "durable",
     name: "Odolný plast",
     description: "PETG · mechanicky namáhané diely",
     pricePerCm3: 0.09,
+    traits: ["Odolný náraz", "Ohybnejší"],
   },
   {
     id: "outdoor",
     name: "Exteriér & Teplo",
     description: "ASA · UV a teplotná odolnosť",
     pricePerCm3: 0.11,
+    traits: ["Odolá slnku", "Vhodný von"],
   },
   {
     id: "flex",
     name: "Pružný gumený",
     description: "TPU · ohybné a nárazuvzdorné diely",
     pricePerCm3: 0.13,
+    traits: ["Pružný", "Nárazuvzdorný"],
   },
   {
     id: "detail",
     name: "Ultra Detail",
     description: "Resin · vysoká presnosť a hladkosť (SLA tlačiareň)",
     pricePerCm3: 0.18,
+    traits: ["Max. detail", "Hladký povrch"],
   },
 ];
 
