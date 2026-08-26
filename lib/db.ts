@@ -71,6 +71,7 @@ async function ensureOrdersTable() {
   await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS slice_print_time_seconds INTEGER;`;
   await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS slice_filament_grams REAL;`;
   await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_note TEXT;`;
+  await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS stripe_payment_intent TEXT;`;
   tableEnsured = true;
 }
 
@@ -167,6 +168,22 @@ export async function insertOrder(order: OrderRecord) {
 export async function updateOrderStatus(id: string, status: string) {
   await ensureOrdersTable();
   await sql`UPDATE orders SET status = ${status} WHERE id = ${id};`;
+}
+
+export async function getOrderByIdForCustomer(id: string, email: string) {
+  await ensureOrdersTable();
+  const result = await sql`SELECT * FROM orders WHERE id = ${id} AND email = ${email};`;
+  return result.rows[0] ?? null;
+}
+
+export async function updatePaymentIntent(id: string, paymentIntentId: string) {
+  await ensureOrdersTable();
+  await sql`UPDATE orders SET stripe_payment_intent = ${paymentIntentId} WHERE id = ${id};`;
+}
+
+export async function cancelOrder(id: string) {
+  await ensureOrdersTable();
+  await sql`UPDATE orders SET status = 'cancelled', print_status = 'cancelled' WHERE id = ${id};`;
 }
 
 export async function updatePrintStatus(id: string, printStatus: string) {

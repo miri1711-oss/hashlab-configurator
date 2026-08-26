@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { getOrderById, updateOrderStatus, updatePacketaBarcode } from "@/lib/db";
+import { getOrderById, updateOrderStatus, updatePacketaBarcode, updatePaymentIntent } from "@/lib/db";
 import { sendOrderConfirmationEmail } from "@/lib/email";
 import { createPacketaHomeDeliveryShipment } from "@/lib/packeta";
 
@@ -27,6 +27,9 @@ export async function POST(request: NextRequest) {
     if (orderId) {
       try {
         await updateOrderStatus(orderId, "paid");
+        if (typeof session.payment_intent === "string") {
+          await updatePaymentIntent(orderId, session.payment_intent);
+        }
         const order = await getOrderById(orderId);
         if (order) {
           await sendOrderConfirmationEmail({

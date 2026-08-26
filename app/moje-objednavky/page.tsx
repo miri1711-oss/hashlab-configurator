@@ -4,6 +4,7 @@ import { verifySessionToken, SESSION_COOKIE_NAME } from "@/lib/session";
 import { listOrdersByEmail } from "@/lib/db";
 import BackgroundDecoration from "@/components/BackgroundDecoration";
 import LogoutButton from "@/components/LogoutButton";
+import CancelOrderButton from "@/components/CancelOrderButton";
 
 const STATUS_LABELS: Record<string, string> = {
   cod: "Čaká na spracovanie (dobierka)",
@@ -86,6 +87,12 @@ export default async function MojeObjednavkyPage() {
                       <p className="mt-1 text-sm font-semibold text-[var(--text-1)]">
                         {Number(order.total_price).toFixed(2)} €
                       </p>
+                      <CancelOrderButton
+                        orderId={order.id as string}
+                        canCancel={
+                          order.print_status !== "sent_to_printer" && order.status !== "cancelled"
+                        }
+                      />
                     </div>
                   </div>
                 );
