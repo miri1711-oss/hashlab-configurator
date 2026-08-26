@@ -45,25 +45,51 @@ export default async function MojeObjednavkyPage() {
             </p>
           ) : (
             <div className="flex flex-col gap-3">
-              {orders.map((order) => (
-                <div key={order.id as string} className="rounded-xl border border-[var(--border)] p-4">
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="mono text-sm font-bold text-[var(--text-1)]">
-                      {order.id as string}
-                    </span>
-                    <span className="rounded-full bg-[var(--surface-2)] px-2.5 py-1 text-xs font-semibold text-[var(--text-2)]">
-                      {STATUS_LABELS[order.status as string] ?? (order.status as string)}
-                    </span>
+              {orders.map((order) => {
+                const previewImage = (order.paint_preview_url as string) || null;
+                return (
+                  <div
+                    key={order.id as string}
+                    className="flex gap-3 rounded-xl border border-[var(--border)] p-4"
+                  >
+                    {previewImage ? (
+                      <img
+                        src={previewImage}
+                        alt="Náhľad modelu"
+                        className="h-16 w-16 shrink-0 rounded-lg border border-[var(--border)] object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-2)]">
+                        <svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+                          <path
+                            d="M12 2L21 7V17L12 22L3 17V7L12 2Z"
+                            stroke="currentColor"
+                            strokeWidth={1.6}
+                            className="text-[var(--text-3)]"
+                          />
+                        </svg>
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        <span className="mono text-sm font-bold text-[var(--text-1)]">
+                          {order.id as string}
+                        </span>
+                        <span className="shrink-0 rounded-full bg-[var(--surface-2)] px-2.5 py-1 text-xs font-semibold text-[var(--text-2)]">
+                          {STATUS_LABELS[order.status as string] ?? (order.status as string)}
+                        </span>
+                      </div>
+                      <p className="text-sm text-[var(--text-3)]">
+                        {order.material_name as string} · {order.color_label as string} ·{" "}
+                        {order.quantity as number} ks
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-[var(--text-1)]">
+                        {Number(order.total_price).toFixed(2)} €
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-sm text-[var(--text-3)]">
-                    {order.material_name as string} · {order.color_label as string} ·{" "}
-                    {order.quantity as number} ks
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-[var(--text-1)]">
-                    {Number(order.total_price).toFixed(2)} €
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
