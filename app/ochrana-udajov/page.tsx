@@ -26,9 +26,9 @@ export default function PrivacyPolicyPage() {
             <section>
               <h2 className="mb-1.5 text-sm font-bold text-[var(--text-1)]">1. Prevádzkovateľ</h2>
               <p>
-                [DOPLNIŤ: Obchodné meno], so sídlom [DOPLNIŤ: adresa], IČO: [DOPLNIŤ], zapísaná v
-                [DOPLNIŤ: napr. Živnostenskom registri / Obchodnom registri OS ...] (ďalej len
-                „prevádzkovateľ" alebo „my"). Kontakt: [DOPLNIŤ email], [DOPLNIŤ telefón].
+                Hashlab s. r. o., so sídlom Lipová 20, 052 01 Spišská Nová Ves-Tarča, IČO: 52575420, zapísaná v
+                Obchodnom registri Okresného súdu Košice I (ďalej len
+                „prevádzkovateľ" alebo „my"). Kontakt: info@hashlab.sk, 0919 394 580.
               </p>
             </section>
 
@@ -80,9 +80,7 @@ export default function PrivacyPolicyPage() {
                 5. Doba uchovávania
               </h2>
               <p>
-                [DOPLNIŤ: napr. Údaje z objednávok uchovávame po dobu vyžadovanú účtovnou a
-                daňovou legislatívou (zvyčajne 10 rokov). Kontaktné správy uchovávame po dobu
-                nevyhnutnú na vybavenie otázky.]
+                Údaje z objednávok uchovávame po dobu vyžadovanú účtovnou a daňovou legislatívou (zvyčajne 10 rokov). Kontaktné správy uchovávame po dobu nevyhnutnú na vybavenie otázky.
               </p>
             </section>
 
@@ -91,7 +89,7 @@ export default function PrivacyPolicyPage() {
               <p>
                 Máte právo na prístup k svojim osobným údajom, ich opravu, vymazanie, obmedzenie
                 spracúvania, prenosnosť a právo namietať proti spracúvaniu. Svoje práva si môžete
-                uplatniť na [DOPLNIŤ email]. Máte tiež právo podať sťažnosť Úradu na ochranu
+                uplatniť na info@hashlab.sk. Máte tiež právo podať sťažnosť Úradu na ochranu
                 osobných údajov SR.
               </p>
             </section>
