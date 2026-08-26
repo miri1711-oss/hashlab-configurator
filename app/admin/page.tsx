@@ -3,8 +3,8 @@ import { redirect } from "next/navigation";
 import { verifySessionToken, SESSION_COOKIE_NAME } from "@/lib/session";
 import { listOrders, listFilamentStock } from "@/lib/db";
 import LogoutButton from "@/components/LogoutButton";
-import PrintStatusButton from "@/components/PrintStatusButton";
 import FilamentStockEditor from "@/components/FilamentStockEditor";
+import OrdersTable from "@/components/OrdersTable";
 import ManualPrinterSwitch from "@/components/ManualPrinterSwitch";
 import CapacityEstimate from "@/components/CapacityEstimate";
 import { listPrinterStatuses } from "@/lib/db";
@@ -70,88 +70,7 @@ export default async function AdminPage() {
           />
         </div>
 
-        <div className="overflow-x-auto rounded-2xl border border-[var(--border)] bg-white">
-          <table className="w-full min-w-[720px] text-left text-sm">
-            <thead className="border-b border-[var(--border)] text-xs uppercase tracking-wide text-[var(--text-3)]">
-              <tr>
-                <th className="px-4 py-3">Číslo</th>
-                <th className="px-4 py-3">Zákazník</th>
-                <th className="px-4 py-3">Materiál / farba</th>
-                <th className="px-4 py-3">Cena</th>
-                <th className="px-4 py-3">Platba</th>
-                <th className="px-4 py-3">Doprava</th>
-                <th className="px-4 py-3">Odhad tlače</th>
-                <th className="px-4 py-3">Poznámka</th>
-                <th className="px-4 py-3">Tlač</th>
-                <th className="px-4 py-3">Dátum</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((order) => {
-                const status = STATUS_LABELS[order.status as string] ?? {
-                  label: order.status as string,
-                  color: "bg-gray-100 text-gray-700",
-                };
-                return (
-                  <tr key={order.id as string} className="border-b border-[var(--border)] last:border-0">
-                    <td className="mono px-4 py-3 font-semibold text-[var(--text-1)]">
-                      {order.id as string}
-                    </td>
-                    <td className="px-4 py-3 text-[var(--text-2)]">
-                      <div>{order.full_name as string}</div>
-                      <div className="text-xs text-[var(--text-3)]">{order.email as string}</div>
-                    </td>
-                    <td className="px-4 py-3 text-[var(--text-2)]">
-                      {order.material_name as string} · {order.color_label as string}
-                    </td>
-                    <td className="px-4 py-3 font-semibold text-[var(--text-1)]">
-                      {Number(order.total_price).toFixed(2)} €
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${status.color}`}>
-                        {status.label}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-[var(--text-3)]">
-                      <div>
-                        {SHIPPING_LABELS[order.shipping_method as string] ?? (order.shipping_method as string)}
-                      </div>
-                      {order.packeta_barcode ? (
-                        <div className="mono mt-0.5 text-[var(--text-1)]">
-                          {order.packeta_barcode as string}
-                        </div>
-                      ) : order.shipping_method === "packeta_domov" ? (
-                        <div className="mt-0.5 text-amber-600">zásielka sa nevytvorila</div>
-                      ) : null}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-[var(--text-3)]">
-                      {order.slice_print_time_seconds ? (
-                        <div>
-                          <div>{Math.round((order.slice_print_time_seconds as number) / 60)} min</div>
-                          <div>{Number(order.slice_filament_grams).toFixed(1)} g</div>
-                        </div>
-                      ) : (
-                        <span>—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 max-w-[160px] truncate text-xs text-[var(--text-3)]" title={order.customer_note as string ?? ""}>
-                      {(order.customer_note as string) || "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <PrintStatusButton
-                        orderId={order.id as string}
-                        currentStatus={order.print_status as string}
-                      />
-                    </td>
-                    <td className="px-4 py-3 text-xs text-[var(--text-3)]">
-                      {new Date(order.created_at as string).toLocaleDateString("sk-SK")}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <OrdersTable orders={orders} />
       </div>
     </div>
   );
