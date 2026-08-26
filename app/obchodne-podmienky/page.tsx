@@ -24,8 +24,8 @@ export default function TermsPage() {
             <section>
               <h2 className="mb-1.5 text-sm font-bold text-[var(--text-1)]">1. Predávajúci</h2>
               <p>
-                [DOPLNIŤ: Obchodné meno], so sídlom [DOPLNIŤ: adresa], IČO: [DOPLNIŤ], DIČ:
-                [DOPLNIŤ], [DOPLNIŤ: IČ DPH, ak je platca] (ďalej len „predávajúci").
+                Hashlab s. r. o., so sídlom Lipová 20, 052 01 Spišská Nová Ves-Tarča, IČO: 52575420, DIČ:
+                2121069203, [DOPLNIŤ: IČ DPH, ak je platca] (ďalej len „predávajúci").
               </p>
             </section>
 
