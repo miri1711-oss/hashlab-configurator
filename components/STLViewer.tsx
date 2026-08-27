@@ -255,10 +255,17 @@ const STLViewer = forwardRef<STLViewerHandle, STLViewerProps>(function STLViewer
      */
     function mergeObjGroupIntoGeometry(group: THREE.Group): THREE.BufferGeometry {
       const partGeometries: THREE.BufferGeometry[] = [];
+      group.updateMatrixWorld(true);
       group.traverse((child) => {
         if (child instanceof THREE.Mesh) {
           const geom = child.geometry as THREE.BufferGeometry;
-          const nonIndexed = geom.index ? geom.toNonIndexed() : geom;
+          const nonIndexed = geom.index ? geom.toNonIndexed() : geom.clone();
+          // Aplikuj svetovu transformacnu maticu (posun/rotacia/mierka) -
+          // dolezite hlavne pre .3mf, kde su casti modelu casto posunute
+          // alebo pretocene cez <item transform="...">, co by inak viedlo
+          // k tomu, ze model je "niekde mimo zaber kamery" (vyzera ako
+          // prazdna scena, hoci geometria technicky existuje).
+          nonIndexed.applyMatrix4(child.matrixWorld);
           const positionOnly = new THREE.BufferGeometry();
           positionOnly.setAttribute("position", nonIndexed.getAttribute("position"));
           partGeometries.push(positionOnly);
