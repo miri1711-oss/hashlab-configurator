@@ -94,7 +94,7 @@ export default function Home() {
 
   function handleFileSelected(file: File) {
     setUploadedFile(file);
-    const isViewable = /\.(stl|obj)$/i.test(file.name);
+    const isViewable = /\.(stl|obj|3mf)$/i.test(file.name);
     setState((prev) => ({
       ...prev,
       fileName: file.name,

@@ -4,6 +4,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import * as THREE from "three";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
+import { ThreeMFLoader } from "three/examples/jsm/loaders/3MFLoader.js";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { computeDimensionsFromGeometry } from "@/lib/stl";
@@ -307,14 +308,22 @@ const STLViewer = forwardRef<STLViewerHandle, STLViewerProps>(function STLViewer
       controls.update();
     }
 
-    const isObj = file.name.toLowerCase().endsWith(".obj");
+    const lowerName = file.name.toLowerCase();
+    const isObj = lowerName.endsWith(".obj");
+    const is3mf = lowerName.endsWith(".3mf");
     const reader = new FileReader();
     reader.onload = () => {
       if (disposed || !reader.result) return;
       try {
-        const geometry = isObj
-          ? mergeObjGroupIntoGeometry(new OBJLoader().parse(reader.result as string))
-          : new STLLoader().parse(reader.result as ArrayBuffer);
+        let geometry;
+        if (isObj) {
+          geometry = mergeObjGroupIntoGeometry(new OBJLoader().parse(reader.result as string));
+        } else if (is3mf) {
+          const group = new ThreeMFLoader().parse(reader.result as ArrayBuffer);
+          geometry = mergeObjGroupIntoGeometry(group);
+        } else {
+          geometry = new STLLoader().parse(reader.result as ArrayBuffer);
+        }
         finishLoadingGeometry(geometry);
       } catch {
         onError();
