@@ -126,7 +126,7 @@ const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function Mod
     return () => window.removeEventListener("keydown", handleEscape);
   }, [isFullscreen]);
   const isViewable = useMemo(
-    () => /\.(stl|obj)$/i.test(file?.name ?? ""),
+    () => /\.(stl|obj|3mf)$/i.test(file?.name ?? ""),
     [file]
   );
   const isDark = theme === "dark";
