@@ -151,7 +151,7 @@ const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function Mod
   return (
     <div className={isFullscreen ? "" : "grad-ring"}>
       <div
-        className={`flex items-center justify-center overflow-hidden transition-shadow ${
+        className={`flex items-start justify-center overflow-hidden pt-10 transition-shadow ${
           isFullscreen
             ? "fixed inset-0 z-[999] h-screen w-screen rounded-none"
             : "relative h-[380px] rounded-2xl sm:h-[460px]"
