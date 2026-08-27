@@ -327,12 +327,18 @@ const STLViewer = forwardRef<STLViewerHandle, STLViewerProps>(function STLViewer
           geometry = mergeObjGroupIntoGeometry(new OBJLoader().parse(reader.result as string));
         } else if (is3mf) {
           const group = new ThreeMFLoader().parse(reader.result as ArrayBuffer);
+          console.log("DIAGNOSTIKA 3MF - nacitana skupina:", group);
+          console.log("DIAGNOSTIKA 3MF - pocet detí:", group.children.length);
           geometry = mergeObjGroupIntoGeometry(group);
+          console.log("DIAGNOSTIKA 3MF - vysledna geometria, pocet vrcholov:", geometry.getAttribute("position")?.count);
+          alert("3MF nacitane. Deti v skupine: " + group.children.length + ", vrcholov: " + (geometry.getAttribute("position")?.count ?? "ZIADNA GEOMETRIA"));
         } else {
           geometry = new STLLoader().parse(reader.result as ArrayBuffer);
         }
         finishLoadingGeometry(geometry);
-      } catch {
+      } catch (err) {
+        console.error("DIAGNOSTIKA - chyba pri nacitani:", err);
+        alert("CHYBA pri nacitani modelu: " + String(err));
         onError();
       }
     };
