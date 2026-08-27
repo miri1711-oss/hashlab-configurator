@@ -72,6 +72,7 @@ async function ensureOrdersTable() {
   await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS slice_filament_grams REAL;`;
   await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_note TEXT;`;
   await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS stripe_payment_intent TEXT;`;
+  await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS batch_id TEXT;`;
   tableEnsured = true;
 }
 

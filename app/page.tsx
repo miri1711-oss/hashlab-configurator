@@ -37,6 +37,18 @@ export default function Home() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [deliveryLabel, setDeliveryLabel] = useState("—");
 
+  const [cartItems, setCartItems] = useState<
+    Array<{
+      fileName: string;
+      file: File;
+      materialName: string;
+      colorLabel: string;
+      infillLabel: string;
+      layerHeightLabel: string;
+      quantity: number;
+      totalPrice: number;
+    }>
+  >([]);
   const [paintModeEnabled, setPaintModeEnabled] = useState(false);
   const [paintColorId, setPaintColorId] = useState("antracitova");
   const [paintResetSignal, setPaintResetSignal] = useState(0);
@@ -52,6 +64,27 @@ export default function Home() {
   const layerHeight = activeLayerHeights.find((l) => l.id === state.layerHeightId) ?? activeLayerHeights[1];
 
   const resinType = RESIN_TYPES.find((r) => r.id === state.resinTypeId);
+
+  function addCurrentModelToCart() {
+    if (!uploadedFile || !state.dimensions) return;
+    const colorOption = COLORS.find((c) => c.id === state.colorId);
+    setCartItems((prev) => [
+      ...prev,
+      {
+        fileName: state.fileName ?? uploadedFile.name,
+        file: uploadedFile,
+        materialName: material.name,
+        colorLabel: colorOption?.label ?? state.colorId,
+        infillLabel: infill.label,
+        layerHeightLabel: layerHeight.label,
+        quantity: state.quantity,
+        totalPrice,
+      },
+    ]);
+    // Resetuj na novy model, ale zachovaj kosik
+    setState(INITIAL_STATE);
+    setUploadedFile(null);
+  }
   const resinPriceMultiplier = state.materialId === "detail" ? (resinType?.priceMultiplier ?? 1) : 1;
 
   const totalPrice = useMemo(
@@ -226,13 +259,45 @@ export default function Home() {
               </section>
             </main>
 
+            {cartItems.length > 0 && (
+              <div className="card mb-3 rounded-2xl p-4 sm:p-5">
+                <p className="mb-2 text-sm font-bold text-[var(--text-1)]">
+                  Košík ({cartItems.length} {cartItems.length === 1 ? "model" : "modely"})
+                </p>
+                <div className="flex flex-col gap-1.5">
+                  {cartItems.map((item, index) => (
+                    <div key={index} className="flex items-center justify-between text-xs text-[var(--text-2)]">
+                      <span className="truncate">
+                        {item.fileName} · {item.materialName} · {item.colorLabel}
+                      </span>
+                      <span className="mono shrink-0 font-semibold">{item.totalPrice.toFixed(2)} €</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-2 border-t border-[var(--border)] pt-2 text-sm font-bold text-[var(--text-1)]">
+                  Medzisúčet košíka: {cartItems.reduce((sum, item) => sum + item.totalPrice, 0).toFixed(2)} €
+                </p>
+              </div>
+            )}
+
             {state.dimensions && (
-              <CheckoutFooter
-                priceLabel={formatEuro(totalPrice)}
-                deliveryLabel={deliveryLabel}
-                disabled={!state.dimensions}
-                onCheckout={handleCheckout}
-              />
+              <div className="flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={addCurrentModelToCart}
+                  className="w-full rounded-xl border border-[var(--border)] px-6 py-3 text-sm font-bold text-[var(--text-1)] transition-colors hover:bg-[var(--surface-2)]"
+                >
+                  + Pridať ďalší model do objednávky
+                </button>
+                <CheckoutFooter
+                  priceLabel={formatEuro(
+                    totalPrice + cartItems.reduce((sum, item) => sum + item.totalPrice, 0)
+                  )}
+                  deliveryLabel={deliveryLabel}
+                  disabled={!state.dimensions}
+                  onCheckout={handleCheckout}
+                />
+              </div>
             )}
           </>
         ) : (
