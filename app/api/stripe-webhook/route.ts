@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getOrderById, updateOrderStatus, updatePacketaBarcode, updatePaymentIntent } from "@/lib/db";
-import { sendOrderConfirmationEmail } from "@/lib/email";
+import { sendOrderConfirmationEmail, sendInternalOrderNotification } from "@/lib/email";
 import { createPacketaHomeDeliveryShipment } from "@/lib/packeta";
 
 export async function POST(request: NextRequest) {
@@ -44,6 +44,18 @@ export async function POST(request: NextRequest) {
             totalPrice: Number(order.total_price),
             shippingMethod: order.shipping_method,
             isResin: order.material_name === "Ultra Detail",
+          });
+          await sendInternalOrderNotification({
+            id: order.id,
+            email: order.email,
+            fullName: order.full_name,
+            materialName: order.material_name,
+            colorLabel: order.color_label,
+            infillLabel: order.infill_label,
+            layerHeightLabel: order.layer_height_label,
+            quantity: order.quantity,
+            totalPrice: Number(order.total_price),
+            shippingMethod: order.shipping_method,
           });
 
           // Platba kartou je uz potvrdena Stripe - az teraz je bezpecne

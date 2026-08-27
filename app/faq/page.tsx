@@ -63,6 +63,21 @@ const FAQ_ITEMS: FaqItem[] = [
     question: "Mám inú otázku - čo teraz?",
     answer: "Napíšte nám cez kontaktný formulár, ozveme sa vám čo najskôr.",
   },
+  {
+    question: "Aké formáty súborov okrem .stl a .obj podporujete?",
+    answer:
+      "Okrem .stl a .obj prijímame aj .step/.stp a .3mf súbory. Živý 3D náhľad a maľovanie farieb je dostupné pre .stl a .obj.",
+  },
+  {
+    question: "Čo je Ultra Detail (živica) a kedy sa hodí?",
+    answer:
+      "Ultra Detail je tlač na živicovej (SLA) tlačiarni - dosahuje výrazne vyššiu presnosť a hladší povrch než bežná tlač, ideálna pre šperky, miniatúrky alebo detailné modely. Vyžaduje po vytlačení umytie a UV vytvrdenie, počítajte s cca 1-2 dňami navyše oproti bežnej tlači.",
+  },
+  {
+    question: "Môžem zrušiť objednávku po jej odoslaní?",
+    answer:
+      "Áno, kým objednávka ešte nezačala tlačiť, môžete ju sami zrušiť v sekcii \"Moje objednávky\" (prihlásite sa emailom, ktorý ste použili pri objednávke). Ak ste platili kartou, peniaze sa vrátia automaticky.",
+  },
 ];
 
 export default function FaqPage() {

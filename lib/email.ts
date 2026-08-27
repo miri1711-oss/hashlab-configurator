@@ -139,3 +139,48 @@ export async function sendOrderConfirmationEmail(order: OrderConfirmationData): 
     console.error("Nepodarilo sa odoslať potvrdenie objednávky emailom:", error);
   }
 }
+
+/**
+ * Posle KRATKE interne upozornenie na novu objednavku - pre obsluhu/sefa,
+ * nie pre zakaznika. Pouziva rovnaky Resend ucet, len ina prijemca adresa
+ * (nastavena cez INTERNAL_NOTIFICATION_EMAIL premennu).
+ */
+export async function sendInternalOrderNotification(order: OrderConfirmationData): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY;
+  const notifyEmail = process.env.INTERNAL_NOTIFICATION_EMAIL;
+  if (!apiKey || !notifyEmail) {
+    console.error("Chyba RESEND_API_KEY alebo INTERNAL_NOTIFICATION_EMAIL - interne upozornenie sa neposlalo.");
+    return;
+  }
+
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "hashlab.sk <onboarding@resend.dev>",
+        to: [notifyEmail],
+        subject: `🔔 Nová objednávka ${order.id} (${order.totalPrice.toFixed(2)} €)`,
+        text: [
+          `Nová objednávka: ${order.id}`,
+          `Zákazník: ${order.fullName} (${order.email})`,
+          `Materiál: ${order.materialName} · ${order.colorLabel}`,
+          `Počet kusov: ${order.quantity}`,
+          `Cena: ${order.totalPrice.toFixed(2)} €`,
+          `Doprava: ${order.shippingMethod}`,
+          "",
+          "Pozri v admin paneli: https://hashlab-configurator.vercel.app/admin",
+        ].join("\n"),
+      }),
+    });
+
+    if (!response.ok) {
+      console.error("Resend chyba pri odosielani interneho upozornenia:", await response.text());
+    }
+  } catch (error) {
+    console.error("Nepodarilo sa odoslat interne upozornenie:", error);
+  }
+}

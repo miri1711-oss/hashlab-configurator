@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insertOrder, listOrders, updatePacketaBarcode } from "@/lib/db";
-import { sendOrderConfirmationEmail } from "@/lib/email";
+import { sendOrderConfirmationEmail, sendInternalOrderNotification } from "@/lib/email";
 import { createPacketaHomeDeliveryShipment } from "@/lib/packeta";
 
 export async function POST(request: NextRequest) {
@@ -66,6 +66,18 @@ export async function POST(request: NextRequest) {
         totalPrice,
         shippingMethod,
         isResin: materialName === "Ultra Detail",
+      });
+      await sendInternalOrderNotification({
+        id: orderId,
+        email,
+        fullName,
+        materialName,
+        colorLabel,
+        infillLabel,
+        layerHeightLabel,
+        quantity,
+        totalPrice,
+        shippingMethod,
       });
 
       // Pri "Packeta domov" a dobierke sa da zasielka vytvorit hned, rovnakym
