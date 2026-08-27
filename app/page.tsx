@@ -318,6 +318,7 @@ export default function Home() {
             }}
             onBack={handleBackToConfig}
             onStartOver={handleStartOver}
+            additionalCartItems={cartItems}
           />
         )}
 

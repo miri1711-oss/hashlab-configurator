@@ -23,6 +23,17 @@ export interface OrderSummaryData {
   deliveryLabel: string;
 }
 
+interface CartItem {
+  fileName: string;
+  file: File;
+  materialName: string;
+  colorLabel: string;
+  infillLabel: string;
+  layerHeightLabel: string;
+  quantity: number;
+  totalPrice: number;
+}
+
 interface CheckoutFlowProps {
   file: File | null;
   paintPreviewDataUrl?: string | null;
@@ -30,6 +41,7 @@ interface CheckoutFlowProps {
   summary: OrderSummaryData;
   onBack: () => void;
   onStartOver: () => void;
+  additionalCartItems?: CartItem[];
 }
 
 const EMPTY_DETAILS: CustomerDetails = {
@@ -48,6 +60,7 @@ export default function CheckoutFlow({
   summary,
   onBack,
   onStartOver,
+  additionalCartItems,
 }: CheckoutFlowProps) {
   const [details, setDetails] = useState<CustomerDetails>(EMPTY_DETAILS);
   const [shipping, setShipping] = useState<ShippingMethod>("courier");
@@ -201,8 +214,61 @@ export default function CheckoutFlow({
       }
     }
 
+    // Ak su v kosiku dalsie modely, posli ich AKO SAMOSTATNE OBJEDNAVKY
+    // teraz, PRED hlavnou objednavkou - vsetky zdielaju rovnaky batchId,
+    // aby sa dali v adminovi rozpoznat ako jeden nakup. Robime to pred
+    // hlavnou objednavkou, lebo pri platbe kartou appka hned presmeruje
+    // prec (window.location.href) a nestihli by sme uz nic poslat potom.
+    const batchId = additionalCartItems && additionalCartItems.length > 0 ? newOrderNumber : null;
+
+    if (additionalCartItems && additionalCartItems.length > 0) {
+      for (const item of additionalCartItems) {
+        try {
+          const itemModelFormData = new FormData();
+          itemModelFormData.append("file", item.file);
+          const itemUploadResponse = await fetch("/api/upload-stl", {
+            method: "POST",
+            body: itemModelFormData,
+          });
+          const itemUploadData = await itemUploadResponse.json();
+          const itemModelFileUrl = itemUploadResponse.ok ? itemUploadData.url : null;
+
+          await fetch("/api/orders", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              orderNumber: `${newOrderNumber}-${additionalCartItems.indexOf(item) + 2}`,
+              fullName: details.fullName,
+              email: details.email,
+              phone: details.phone,
+              street: details.street,
+              city: details.city,
+              zip: details.zip,
+              shippingMethod: shipping,
+              packetaPointName: shipping === "packeta" ? packetaPointName : null,
+              paymentMethod: payment,
+              fileName: item.fileName,
+              modelFileUrl: itemModelFileUrl,
+              materialName: item.materialName,
+              colorLabel: item.colorLabel,
+              hasCustomPaint: false,
+              infillLabel: item.infillLabel,
+              layerHeightLabel: item.layerHeightLabel,
+              quantity: item.quantity,
+              totalPrice: item.totalPrice,
+              batchId,
+            }),
+          });
+        } catch {
+          // Ak sa niektora dodatocna polozka nepodarila ulozit, hlavna
+          // objednavka pokracuje dalej - nechceme blokovat cely nakup.
+        }
+      }
+    }
+
     const orderPayload = {
       orderNumber: newOrderNumber,
+      batchId,
       fullName: details.fullName,
       email: details.email,
       phone: details.phone,
