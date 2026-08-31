@@ -230,7 +230,7 @@ const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function Mod
         </button>
 
         {loaded && (
-          <div className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 gap-1.5 rounded-full bg-black/50 p-1.5 backdrop-blur-sm">
+          <div className="absolute bottom-16 left-1/2 z-10 flex -translate-x-1/2 gap-1.5 rounded-full bg-black/50 p-1.5 backdrop-blur-sm">
             <button
               type="button"
               onClick={() => stlViewerRef.current?.scaleModel(1.1)}
