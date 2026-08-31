@@ -191,6 +191,7 @@ const STLViewer = forwardRef<STLViewerHandle, STLViewerProps>(function STLViewer
     const controls = new OrbitControls(camera, renderer.domElement);
     const transformControls = new TransformControls(camera, renderer.domElement);
     transformControls.setMode("scale");
+    transformControls.setSize(1.2);
     // Ked uzivatel zacne tahat za gizmo, vypni OrbitControls (inak by sa
     // model tocil aj otacal kamerou naraz - bili by sa navzajom).
     transformControls.addEventListener("dragging-changed", (event) => {
