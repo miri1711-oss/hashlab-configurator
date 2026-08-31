@@ -562,6 +562,27 @@ export default function CheckoutFlow({
       <section className="flex flex-col gap-4 lg:col-span-2">
         <div className="card sticky top-4 rounded-2xl p-4 sm:p-5">
           <p className="display mb-3.5 text-sm font-bold text-[var(--text-1)]">Súhrn objednávky</p>
+
+          {additionalCartItems && additionalCartItems.length > 0 && (
+            <div className="mb-4 flex flex-col gap-2 border-b border-[var(--border-soft)] pb-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-3)]">
+                Ďalšie modely v objednávke ({additionalCartItems.length})
+              </p>
+              {additionalCartItems.map((item, index) => (
+                <div key={index} className="rounded-lg bg-[var(--surface-2)] p-2.5 text-xs">
+                  <p className="mono font-semibold text-[var(--text-1)]">{item.fileName}</p>
+                  <p className="text-[var(--text-3)]">
+                    {item.materialName} · {item.colorLabel} · {item.quantity} ks
+                  </p>
+                  <p className="mt-0.5 font-semibold text-[var(--text-2)]">{item.totalPrice.toFixed(2)} €</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-3)]">
+            {additionalCartItems && additionalCartItems.length > 0 ? "Posledný model" : ""}
+          </p>
           <div className="flex flex-col gap-2 text-sm">
             <SummaryRow label="Súbor" value={summary.fileName} mono />
             <SummaryRow label="Materiál" value={summary.materialName} />
