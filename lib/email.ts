@@ -184,3 +184,51 @@ export async function sendInternalOrderNotification(order: OrderConfirmationData
     console.error("Nepodarilo sa odoslat interne upozornenie:", error);
   }
 }
+
+export interface LowStockItem {
+  materialName: string;
+  colorLabel: string;
+  quantityGrams: number;
+}
+
+/**
+ * Posle sumarny email o materialoch, co klesli pod limit skladu.
+ */
+export async function sendLowStockAlert(items: LowStockItem[]): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY;
+  const notifyEmail = process.env.INTERNAL_NOTIFICATION_EMAIL;
+  if (!apiKey || !notifyEmail || items.length === 0) return;
+
+  const itemsList = items
+    .map((item) => `- ${item.materialName} (${item.colorLabel}): ${item.quantityGrams.toFixed(0)} g zostava`)
+    .join("\n");
+
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "hashlab.sk <onboarding@resend.dev>",
+        to: [notifyEmail],
+        subject: `⚠️ Nizky sklad materialov (${items.length} polozka/polozky)`,
+        text: [
+          "Tieto materialy klesli pod skladovy limit (100 g):",
+          "",
+          itemsList,
+          "",
+          "Skontroluj a doplň sklad v admin paneli:",
+          "https://hashlab-configurator.vercel.app/admin",
+        ].join("\n"),
+      }),
+    });
+
+    if (!response.ok) {
+      console.error("Resend chyba pri odosielani low stock alertu:", await response.text());
+    }
+  } catch (error) {
+    console.error("Nepodarilo sa odoslat low stock alert:", error);
+  }
+}
