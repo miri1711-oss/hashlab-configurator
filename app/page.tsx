@@ -168,7 +168,17 @@ export default function Home() {
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           <Header step={state.step} />
-          <GoogleTranslate pageLanguage="sk" />
+          <GoogleTranslate
+            pageLanguage="sk"
+            languages={[
+              { label: "Slovenčina", value: "sk", flag: "sk" },
+              { label: "English", value: "en", flag: "gb" },
+              { label: "Deutsch", value: "de", flag: "de" },
+              { label: "Čeština", value: "cs", flag: "cz" },
+              { label: "Magyar", value: "hu", flag: "hu" },
+              { label: "Polski", value: "pl", flag: "pl" },
+            ]}
+          />
         </div>
 
         {state.step < 3 && (
