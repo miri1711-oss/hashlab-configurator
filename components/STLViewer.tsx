@@ -341,8 +341,12 @@ const STLViewer = forwardRef<STLViewerHandle, STLViewerProps>(function STLViewer
       scene.add(mesh);
       transformControls.attach(mesh);
       scene.add(transformControls as unknown as THREE.Object3D);
-      console.log("DIAGNOSTIKA gizmo - transformControls pridany, scene children:", scene.children.length);
-      console.log("DIAGNOSTIKA gizmo - transformControls visible:", (transformControls as any).visible);
+      alert(
+        "GIZMO DIAGNOSTIKA:\n" +
+        "Pocet objektov v scene: " + scene.children.length + "\n" +
+        "TransformControls visible: " + (transformControls as any).visible + "\n" +
+        "TransformControls object pripojeny: " + ((transformControls as any).object ? "ANO" : "NIE")
+      );
 
       const edges = new THREE.LineSegments(
         new THREE.EdgesGeometry(geometry, 32),
