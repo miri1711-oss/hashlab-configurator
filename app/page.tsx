@@ -266,11 +266,21 @@ export default function Home() {
                 </p>
                 <div className="flex flex-col gap-1.5">
                   {cartItems.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between text-xs text-[var(--text-2)]">
+                    <div key={index} className="flex items-center justify-between gap-2 text-xs text-[var(--text-2)]">
                       <span className="truncate">
                         {item.fileName} · {item.materialName} · {item.colorLabel}
                       </span>
-                      <span className="mono shrink-0 font-semibold">{item.totalPrice.toFixed(2)} €</span>
+                      <span className="flex shrink-0 items-center gap-2">
+                        <span className="mono font-semibold">{item.totalPrice.toFixed(2)} €</span>
+                        <button
+                          type="button"
+                          onClick={() => setCartItems((prev) => prev.filter((_, i) => i !== index))}
+                          className="text-red-600 hover:text-red-800"
+                          aria-label="Odstrániť z košíka"
+                        >
+                          ✕
+                        </button>
+                      </span>
                     </div>
                   ))}
                 </div>
