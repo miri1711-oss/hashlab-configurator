@@ -229,6 +229,34 @@ const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function Mod
           )}
         </button>
 
+        {loaded && (
+          <div className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 gap-1.5 rounded-full bg-black/50 p-1.5 backdrop-blur-sm">
+            <button
+              type="button"
+              onClick={() => stlViewerRef.current?.scaleModel(1.1)}
+              title="Zväčšiť o 10%"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-white hover:bg-white/20"
+            >
+              +
+            </button>
+            <button
+              type="button"
+              onClick={() => stlViewerRef.current?.scaleModel(0.9)}
+              title="Zmenšiť o 10%"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-white hover:bg-white/20"
+            >
+              −
+            </button>
+            <button
+              type="button"
+              onClick={() => stlViewerRef.current?.rotateModel("y", 90)}
+              title="Otočiť o 90°"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-white hover:bg-white/20"
+            >
+              ↻
+            </button>
+          </div>
+        )}
         {(isFullscreen || (loaded && isViewable)) && (
           <button
             type="button"
