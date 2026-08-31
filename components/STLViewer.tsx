@@ -25,6 +25,10 @@ interface STLViewerProps {
 }
 
 export interface STLViewerHandle {
+  /** Zmensi/zvacsi model podla nasobku (napr. 1.1 = o 10% vacsi, 0.9 = o 10% mensi). */
+  scaleModel: (factor: number) => void;
+  /** Otoci model okolo danej osi o zadany pocet stupnov. */
+  rotateModel: (axis: "x" | "y" | "z", degrees: number) => void;
   /** Vrati aktualny obraz 3D nahladu (vratane namalovanych farieb) ako PNG data URL, alebo null ak nie je este pripraveny. */
   captureSnapshot: () => string | null;
   /** Vytvori .3mf subor s farbami po jednotlivych trojuholnikoch (Standard 3MF), alebo null ak model nie je nacitany. */
@@ -61,8 +65,35 @@ const STLViewer = forwardRef<STLViewerHandle, STLViewerProps>(function STLViewer
   const paintColorRef = useRef(new THREE.Color(paintColorHex));
   const paintModeRef = useRef(paintMode);
   const rebuildColorsRef = useRef<() => void>(() => {});
+  const meshRef = useRef<THREE.Mesh | null>(null);
 
   useImperativeHandle(forwardedRef, () => ({
+    scaleModel: (factor: number) => {
+      const mesh = meshRef.current;
+      if (!mesh) return;
+      mesh.scale.multiplyScalar(factor);
+      const geometry = mesh.geometry as THREE.BufferGeometry;
+      geometry.computeBoundingBox();
+      const box = geometry.boundingBox;
+      if (box) {
+        const size = new THREE.Vector3();
+        box.getSize(size);
+        onDimensions({
+          x: Math.round(size.x * mesh.scale.x * 10) / 10,
+          y: Math.round(size.y * mesh.scale.y * 10) / 10,
+          z: Math.round(size.z * mesh.scale.z * 10) / 10,
+          volumeCm3: 0, // dopocitane v page.tsx z novych rozmerov, ak treba
+        });
+      }
+    },
+    rotateModel: (axis: "x" | "y" | "z", degrees: number) => {
+      const mesh = meshRef.current;
+      if (!mesh) return;
+      const radians = (degrees * Math.PI) / 180;
+      if (axis === "x") mesh.rotation.x += radians;
+      if (axis === "y") mesh.rotation.y += radians;
+      if (axis === "z") mesh.rotation.z += radians;
+    },
     captureSnapshot: () => {
       const renderer = rendererRef.current;
       const scene = sceneRef.current;
@@ -297,6 +328,7 @@ const STLViewer = forwardRef<STLViewerHandle, STLViewerProps>(function STLViewer
         side: THREE.DoubleSide,
       });
       mesh = new THREE.Mesh(geometry, material);
+      meshRef.current = mesh;
       scene.add(mesh);
 
       const edges = new THREE.LineSegments(

@@ -6,6 +6,8 @@ import { ModelDimensions } from "@/lib/types";
 import { COLORS } from "@/lib/constants";
 
 export interface ModelViewerHandle {
+  scaleModel: (factor: number) => void;
+  rotateModel: (axis: "x" | "y" | "z", degrees: number) => void;
   captureSnapshot: () => string | null;
   exportColoredThreeMF: () => Blob | null;
 }
@@ -111,6 +113,8 @@ const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function Mod
   const [theme, setTheme] = useState<ViewerTheme>("dark");
 
   useImperativeHandle(forwardedRef, () => ({
+    scaleModel: (factor: number) => stlViewerRef.current?.scaleModel(factor),
+    rotateModel: (axis: "x" | "y" | "z", degrees: number) => stlViewerRef.current?.rotateModel(axis, degrees),
     captureSnapshot: () => stlViewerRef.current?.captureSnapshot() ?? null,
     exportColoredThreeMF: () => stlViewerRef.current?.exportColoredThreeMF() ?? null,
   }));

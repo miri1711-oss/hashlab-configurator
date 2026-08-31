@@ -217,6 +217,35 @@ export default function Home() {
               </section>
 
               <section className="flex flex-col gap-4 lg:col-span-2">
+                {state.dimensions && (
+                  <div className="card rounded-2xl p-4 sm:p-5">
+                    <p className="display mb-3 text-sm font-bold text-[var(--text-1)]">Upraviť model</p>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => modelViewerRef.current?.scaleModel(1.1)}
+                        className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs font-semibold hover:bg-[var(--surface-2)]"
+                      >
+                        🔍+ Zväčšiť o 10%
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => modelViewerRef.current?.scaleModel(0.9)}
+                        className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs font-semibold hover:bg-[var(--surface-2)]"
+                      >
+                        🔍- Zmenšiť o 10%
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => modelViewerRef.current?.rotateModel("y", 90)}
+                        className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs font-semibold hover:bg-[var(--surface-2)]"
+                      >
+                        ↻ Otočiť o 90°
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <MaterialPanel
                   selectedId={state.materialId}
                   onSelect={(materialId) => setState((prev) => ({ ...prev, materialId }))}
