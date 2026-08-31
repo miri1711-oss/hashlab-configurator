@@ -107,7 +107,8 @@ export default function CheckoutFlow({
   }
 
   const shippingOption = SHIPPING_OPTIONS.find((o) => o.id === shipping)!;
-  const totalWithShipping = summary.itemsPrice + shippingOption.price;
+  const additionalItemsPrice = (additionalCartItems ?? []).reduce((sum, item) => sum + item.totalPrice, 0);
+  const totalWithShipping = summary.itemsPrice + additionalItemsPrice + shippingOption.price;
 
   function updateField<K extends keyof CustomerDetails>(field: K, value: string) {
     setDetails((prev) => ({ ...prev, [field]: value }));
