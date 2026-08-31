@@ -5,6 +5,7 @@ import BackgroundDecoration from "@/components/BackgroundDecoration";
 import Header from "@/components/Header";
 import ModelViewer, { ModelViewerHandle } from "@/components/ModelViewer";
 import PrinterStatusBadge from "@/components/PrinterStatusBadge";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import InfoPanel from "@/components/InfoPanel";
 import MaterialPanel from "@/components/MaterialPanel";
 import ResinTypePanel from "@/components/ResinTypePanel";
@@ -164,7 +165,10 @@ export default function Home() {
       <BackgroundDecoration />
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <Header step={state.step} />
+        <div className="flex items-center justify-between">
+          <Header step={state.step} />
+          <LanguageSwitcher />
+        </div>
 
         {state.step < 3 && (
           <div className="pt-4">
