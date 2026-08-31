@@ -341,12 +341,18 @@ const STLViewer = forwardRef<STLViewerHandle, STLViewerProps>(function STLViewer
       scene.add(mesh);
       transformControls.attach(mesh);
       scene.add(transformControls as unknown as THREE.Object3D);
-      alert(
-        "GIZMO DIAGNOSTIKA:\n" +
-        "Pocet objektov v scene: " + scene.children.length + "\n" +
-        "TransformControls visible: " + (transformControls as any).visible + "\n" +
-        "TransformControls object pripojeny: " + ((transformControls as any).object ? "ANO" : "NIE")
-      );
+      setTimeout(() => {
+        const tc = transformControls as any;
+        alert(
+          "GIZMO DIAGNOSTIKA 2:\n" +
+          "Gizmo pozicia: " + JSON.stringify(tc.position) + "\n" +
+          "Gizmo scale: " + JSON.stringify(tc.scale) + "\n" +
+          "Model pozicia: " + JSON.stringify(mesh?.position) + "\n" +
+          "Model scale: " + JSON.stringify(mesh?.scale) + "\n" +
+          "Camera pozicia: " + JSON.stringify(camera.position) + "\n" +
+          "Pocet objektov v gizmo: " + tc.children.length
+        );
+      }, 500);
 
       const edges = new THREE.LineSegments(
         new THREE.EdgesGeometry(geometry, 32),
