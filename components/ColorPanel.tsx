@@ -1,5 +1,4 @@
 import { COLORS } from "@/lib/constants";
-import { useLocale } from "@/components/LocaleContext";
 
 interface ColorPanelProps {
   selectedId: string;
@@ -7,7 +6,6 @@ interface ColorPanelProps {
 }
 
 export default function ColorPanel({ selectedId, onSelect }: ColorPanelProps) {
-  const { t } = useLocale();
   const selectedLabel = COLORS.find((c) => c.id === selectedId)?.label ?? "";
 
   return (
@@ -22,7 +20,7 @@ export default function ColorPanel({ selectedId, onSelect }: ColorPanelProps) {
         <circle cx={32} cy={32} r={4} fill="currentColor" />
       </svg>
 
-      <p className="display relative mb-0.5 text-sm font-bold text-[var(--text-1)]">{t.color.title}</p>
+      <p className="display relative mb-0.5 text-sm font-bold text-[var(--text-1)]">Farba</p>
       <p className="relative mb-3.5 text-xs text-[var(--text-3)]">
         Dostupné skladom, expedícia bez zdržania
       </p>

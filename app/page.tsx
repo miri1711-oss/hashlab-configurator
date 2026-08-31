@@ -5,7 +5,8 @@ import BackgroundDecoration from "@/components/BackgroundDecoration";
 import Header from "@/components/Header";
 import ModelViewer, { ModelViewerHandle } from "@/components/ModelViewer";
 import PrinterStatusBadge from "@/components/PrinterStatusBadge";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
+import "next-google-translate-widget/styles";
+import GoogleTranslate from "next-google-translate-widget";
 import InfoPanel from "@/components/InfoPanel";
 import MaterialPanel from "@/components/MaterialPanel";
 import ResinTypePanel from "@/components/ResinTypePanel";
@@ -167,7 +168,7 @@ export default function Home() {
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           <Header step={state.step} />
-          <LanguageSwitcher />
+          <GoogleTranslate pageLanguage="sk" />
         </div>
 
         {state.step < 3 && (

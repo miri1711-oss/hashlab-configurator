@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { LocaleProvider } from "@/components/LocaleContext";
 
 export const metadata: Metadata = {
   title: "Hashlab — Konfigurátor 3D tlače",
@@ -24,9 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-screen font-sans">
-        <LocaleProvider>{children}</LocaleProvider>
-      </body>
+      <body className="min-h-screen font-sans">{children}</body>
     </html>
   );
 }
