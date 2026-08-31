@@ -1,5 +1,6 @@
 import { MATERIALS } from "@/lib/constants";
 import { MaterialId } from "@/lib/types";
+import { useLocale } from "@/components/LocaleContext";
 
 interface MaterialPanelProps {
   selectedId: MaterialId;
@@ -32,10 +33,11 @@ const MATERIAL_ICONS: Record<MaterialId, JSX.Element> = {
 };
 
 export default function MaterialPanel({ selectedId, onSelect }: MaterialPanelProps) {
+  const { t } = useLocale();
   return (
     <div className="card rounded-2xl p-4 sm:p-5">
-      <p className="display mb-0.5 text-sm font-bold text-[var(--text-1)]">Materiál</p>
-      <p className="mb-3.5 text-xs text-[var(--text-3)]">Vyberte podľa účelu použitia</p>
+      <p className="display mb-0.5 text-sm font-bold text-[var(--text-1)]">{t.material.title}</p>
+      <p className="mb-3.5 text-xs text-[var(--text-3)]">{t.material.subtitle}</p>
       <div className="grid grid-cols-1 gap-2">
         {MATERIALS.map((material) => {
           const isSelected = material.id === selectedId;
