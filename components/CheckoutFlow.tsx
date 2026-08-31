@@ -595,6 +595,7 @@ export default function CheckoutFlow({
             <SummaryRow label="Výška vrstvy" value={summary.layerHeightLabel} />
             <SummaryRow label="Počet kusov" value={String(summary.quantity)} />
             <SummaryRow label="Doprava" value={shippingOption.label} />
+            <SummaryRow label="Cena tohto modelu" value={formatEuro(summary.itemsPrice)} mono />
           </div>
           <div className="mt-4 flex items-center justify-between border-t border-[var(--border-soft)] pt-4">
             <span className="text-sm font-semibold text-[var(--text-1)]">Celkom s DPH</span>
