@@ -7,6 +7,7 @@ import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 import { ThreeMFLoader } from "three/examples/jsm/loaders/3MFLoader.js";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
 import { computeDimensionsFromGeometry } from "@/lib/stl";
 import { buildTriangleMeshData, floodFillRegion, TriangleMeshData } from "@/lib/paint";
 import { buildColoredThreeMF } from "@/lib/threemf";
@@ -188,6 +189,13 @@ const STLViewer = forwardRef<STLViewerHandle, STLViewerProps>(function STLViewer
     scene.add(rimLight);
 
     const controls = new OrbitControls(camera, renderer.domElement);
+    const transformControls = new TransformControls(camera, renderer.domElement);
+    transformControls.setMode("scale");
+    // Ked uzivatel zacne tahat za gizmo, vypni OrbitControls (inak by sa
+    // model tocil aj otacal kamerou naraz - bili by sa navzajom).
+    transformControls.addEventListener("dragging-changed", (event) => {
+      controls.enabled = !event.value;
+    });
     controls.enableDamping = true;
     controls.dampingFactor = 0.1;
     controls.autoRotate = true;
@@ -330,6 +338,8 @@ const STLViewer = forwardRef<STLViewerHandle, STLViewerProps>(function STLViewer
       mesh = new THREE.Mesh(geometry, material);
       meshRef.current = mesh;
       scene.add(mesh);
+      transformControls.attach(mesh);
+      scene.add(transformControls as unknown as THREE.Object3D);
 
       const edges = new THREE.LineSegments(
         new THREE.EdgesGeometry(geometry, 32),
