@@ -66,10 +66,7 @@ export default function Home() {
   const resinType = RESIN_TYPES.find((r) => r.id === state.resinTypeId);
 
   function addCurrentModelToCart() {
-    if (!uploadedFile || !state.dimensions) {
-      alert("Nepodarilo sa pridat - uploadedFile: " + (uploadedFile ? "OK" : "CHYBA") + ", dimensions: " + (state.dimensions ? "OK" : "CHYBA"));
-      return;
-    }
+    if (!uploadedFile || !state.dimensions) return;
     const colorOption = COLORS.find((c) => c.id === state.colorId);
     setCartItems((prev) => [
       ...prev,
