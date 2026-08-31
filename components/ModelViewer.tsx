@@ -230,31 +230,36 @@ const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function Mod
         </button>
 
         {loaded && (
-          <div className="absolute bottom-16 left-1/2 z-10 flex -translate-x-1/2 gap-1.5 rounded-full bg-black/50 p-1.5 backdrop-blur-sm">
-            <button
-              type="button"
-              onClick={() => stlViewerRef.current?.scaleModel(1.1)}
-              title="Zväčšiť o 10%"
-              className="flex h-8 w-8 items-center justify-center rounded-full text-white hover:bg-white/20"
-            >
-              +
-            </button>
-            <button
-              type="button"
-              onClick={() => stlViewerRef.current?.scaleModel(0.9)}
-              title="Zmenšiť o 10%"
-              className="flex h-8 w-8 items-center justify-center rounded-full text-white hover:bg-white/20"
-            >
-              −
-            </button>
-            <button
-              type="button"
-              onClick={() => stlViewerRef.current?.rotateModel("y", 90)}
-              title="Otočiť o 90°"
-              className="flex h-8 w-8 items-center justify-center rounded-full text-white hover:bg-white/20"
-            >
-              ↻
-            </button>
+          <div className="absolute bottom-16 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-1">
+            <span className="rounded-full bg-black/50 px-2.5 py-0.5 text-[10px] font-semibold text-white/80 backdrop-blur-sm">
+              Veľkosť modelu na tlač
+            </span>
+            <div className="flex gap-1.5 rounded-full bg-black/50 p-1.5 backdrop-blur-sm">
+              <button
+                type="button"
+                onClick={() => stlViewerRef.current?.scaleModel(1.1)}
+                title="Zväčšiť model o 10%"
+                className="flex h-8 items-center justify-center gap-1 rounded-full px-2.5 text-xs font-semibold text-white hover:bg-white/20"
+              >
+                + Väčší
+              </button>
+              <button
+                type="button"
+                onClick={() => stlViewerRef.current?.scaleModel(0.9)}
+                title="Zmenšiť model o 10%"
+                className="flex h-8 items-center justify-center gap-1 rounded-full px-2.5 text-xs font-semibold text-white hover:bg-white/20"
+              >
+                − Menší
+              </button>
+              <button
+                type="button"
+                onClick={() => stlViewerRef.current?.rotateModel("y", 90)}
+                title="Otočiť model o 90°"
+                className="flex h-8 items-center justify-center gap-1 rounded-full px-2.5 text-xs font-semibold text-white hover:bg-white/20"
+              >
+                ↻ Otočiť
+              </button>
+            </div>
           </div>
         )}
         {(isFullscreen || (loaded && isViewable)) && (
